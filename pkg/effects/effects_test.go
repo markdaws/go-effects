@@ -9,7 +9,7 @@ import (
 
 const cabinPath = "../../test/cabin.jpg"
 
-func TestLoadImageJPG(t *testing.T) {
+func TestOilPainting(t *testing.T) {
 	img, err := effects.LoadImage(cabinPath)
 	require.Nil(t, err)
 	require.NotNil(t, img)
@@ -19,5 +19,8 @@ func TestLoadImageJPG(t *testing.T) {
 	require.NotNil(t, oilImg)
 
 	err = oilImg.SaveAsJPG("../../test/cabin-oil.jpg", 90)
+	require.Nil(t, err)
+
+	err = oilImg.SaveAsPNG("../../test/cabin-oil.png")
 	require.Nil(t, err)
 }

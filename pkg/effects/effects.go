@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
-	_ "image/png"
+	"image/png"
 	"os"
 )
 
@@ -20,6 +20,19 @@ func (i *Image) SaveAsJPG(path string, quality int) error {
 		return fmt.Errorf("failed to create image: %s, %s", path, err)
 	}
 	err = jpeg.Encode(toImg, i.img, &jpeg.Options{Quality: quality})
+	toImg.Close()
+	if err != nil {
+		return fmt.Errorf("failed to save image: %s, %s", path, err)
+	}
+	return nil
+}
+
+func (i *Image) SaveAsPNG(path string) error {
+	toImg, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create image: %s, %s", path, err)
+	}
+	err = png.Encode(toImg, i.img)
 	toImg.Close()
 	if err != nil {
 		return fmt.Errorf("failed to save image: %s, %s", path, err)
@@ -103,9 +116,9 @@ func OilPainting(img *Image, filterSize, levels int, cropOutput bool) (*Image, e
 			b := bBin[maxIndex] / maxIntensity
 
 			if cropOutput {
-				out.Set(x-filterOffset, y-filterOffset, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b)})
+				out.Set(x-filterOffset, y-filterOffset, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
 			} else {
-				out.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b)})
+				out.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
 			}
 		}
 	}
