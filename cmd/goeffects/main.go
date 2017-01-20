@@ -60,7 +60,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		oilImg, err := effects.OilPainting(img, filterSize, levels, true)
+		oilImg, err := effects.OilPainting(img, 0, filterSize, levels)
 		if err != nil {
 			fmt.Println("Failed to apply effect:", err)
 			os.Exit(1)

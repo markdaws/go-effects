@@ -3,17 +3,26 @@ package effects
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"math"
 	"os"
+	"runtime"
+	"sync"
 )
 
+// Image wrapper around internal pixels
 type Image struct {
 	img *image.RGBA
 }
 
+// Bounds returns the bounds of the pixels in the image
+func (i *Image) Bounds() image.Rectangle {
+	return i.img.Bounds()
+}
+
+// SaveAsJPG saves the image as a JPG. quality is between 1 and 100, 100 being best
 func (i *Image) SaveAsJPG(path string, quality int) error {
 	toImg, err := os.Create(path)
 	if err != nil {
@@ -27,11 +36,13 @@ func (i *Image) SaveAsJPG(path string, quality int) error {
 	return nil
 }
 
+// SaveAsPNG saves the image as a PNG
 func (i *Image) SaveAsPNG(path string) error {
 	toImg, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create image: %s, %s", path, err)
 	}
+
 	err = png.Encode(toImg, i.img)
 	toImg.Close()
 	if err != nil {
@@ -40,6 +51,7 @@ func (i *Image) SaveAsPNG(path string) error {
 	return nil
 }
 
+// LoadImage loads the specified image from disk. Supported file types are png and jpg
 func LoadImage(path string) (*Image, error) {
 	srcReader, err := os.Open(path)
 	if err != nil {
@@ -58,72 +70,162 @@ func LoadImage(path string) (*Image, error) {
 	return &Image{img: outImg}, nil
 }
 
-func OilPainting(img *Image, filterSize, levels int, cropOutput bool) (*Image, error) {
-	w := img.img.Bounds().Dx()
-	h := img.img.Bounds().Dy()
+// GSAlgo the type of algorithm to use when converting an image to it's grayscale equivalent
+type GSAlgo int
 
-	// We lose some of the image due to the filter, if we want to crop then we will not write
-	// the empty pixels
-	bounds := img.img.Bounds()
-	var out *image.RGBA
-	if cropOutput {
-		bounds = image.Rectangle{
-			Min: image.Point{X: 0, Y: 0},
-			Max: image.Point{X: bounds.Max.X - filterSize, Y: bounds.Max.Y - filterSize},
+const (
+	// GSLIGHTNESS is the average of the min and max r,g,b value
+	GSLIGHTNESS GSAlgo = iota
+
+	// GSAVERAGE is the average of the r,g,b values of each pixel
+	GSAVERAGE
+
+	// GSLUMINOSITY used a weighting for r,g,b based on how the human eye perceives colors
+	GSLUMINOSITY
+)
+
+type pixelFunc func(ri, x, y, offset, inStride int, inPix, outPix []uint8)
+
+func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg *Image, pf pixelFunc) {
+	w := inBounds.Dx()
+	h := inBounds.Dy()
+
+	minX := inBounds.Min.X
+	minY := inBounds.Min.Y
+	stride := inImg.img.Stride
+	start := minY*stride + minX*4
+	inPix := inImg.img.Pix
+	outPix := outImg.img.Pix
+
+	wg := sync.WaitGroup{}
+	xOffset := minX
+	widthPerRoutine := w / numRoutines
+
+	for r := 0; r < numRoutines; r++ {
+		wg.Add(1)
+
+		go func(ri, xStart, yStart, width, height int) {
+			for x := xStart; x < xStart+width; x++ {
+				for y := yStart; y < yStart+height; y++ {
+					offset := start + y*stride + x*4
+					pf(ri, x, y, offset, stride, inPix, outPix)
+				}
+			}
+			wg.Done()
+		}(r, xOffset, minY, widthPerRoutine, h)
+
+		xOffset += widthPerRoutine
+		if r == numRoutines-1 {
+			widthPerRoutine = w - xOffset
 		}
 	}
-	out = image.NewRGBA(bounds)
+	wg.Wait()
+}
 
+// Grayscale renders the input image as a grayscale image. numRoutines specifies how many
+// goroutines should be used to process the image in parallel, use 0 to let the library decide
+func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
+
+	if numRoutines == 0 {
+		numRoutines = runtime.GOMAXPROCS(0)
+	}
+
+	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
+		var r, g, b uint8 = inPix[offset], inPix[offset+1], inPix[offset+2]
+		switch algo {
+		case GSLIGHTNESS:
+			max := math.Max(math.Max(float64(r), float64(g)), float64(b))
+			min := math.Max(math.Min(float64(r), float64(g)), float64(b))
+			r = uint8(max + min/2)
+			g = r
+			b = r
+		case GSAVERAGE:
+			r = (r + g + b) / 3
+			g = r
+			b = r
+		case GSLUMINOSITY:
+			r = uint8(0.21*float64(r) + 0.72*float64(g) + 0.07*float64(b))
+			g = r
+			b = r
+		}
+		outPix[offset] = r
+		outPix[offset+1] = g
+		outPix[offset+2] = b
+		outPix[offset+3] = 255
+	}
+
+	out := &Image{img: image.NewRGBA(img.img.Bounds())}
+	runParallel(numRoutines, img, img.Bounds(), out, pf)
+	return out, nil
+}
+
+// OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
+// goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
+// how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
+// will be grouped in to, start with values 5,30 to see how that works.
+func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error) {
+	out := &Image{img: image.NewRGBA(img.img.Bounds())}
 	levels = levels - 1
 	filterOffset := (filterSize - 1) / 2
 
-	iBin := make([]int, levels+1)
-	rBin := make([]int, levels+1)
-	gBin := make([]int, levels+1)
-	bBin := make([]int, levels+1)
-
-	for y := filterOffset; y < h-filterOffset; y++ {
-		for x := filterOffset; x < w-filterOffset; x++ {
-
-			var maxIntensity int
-			var maxIndex int
-
-			reset(iBin)
-			reset(rBin)
-			reset(gBin)
-			reset(bBin)
-
-			for fy := -filterOffset; fy <= filterOffset; fy++ {
-				for fx := -filterOffset; fx <= filterOffset; fx++ {
-
-					p := img.img.At(x+fx, y+fy).(color.RGBA)
-
-					ci := int(roundToInt32((float64(p.R+p.G+p.B) / 3.0 * float64(levels)) / 255.0))
-					iBin[ci] += 1
-					rBin[ci] += int(p.R)
-					gBin[ci] += int(p.G)
-					bBin[ci] += int(p.B)
-
-					if iBin[ci] > maxIntensity {
-						maxIntensity = iBin[ci]
-						maxIndex = ci
-					}
-				}
-			}
-
-			r := rBin[maxIndex] / maxIntensity
-			g := gBin[maxIndex] / maxIntensity
-			b := bBin[maxIndex] / maxIntensity
-
-			if cropOutput {
-				out.Set(x-filterOffset, y-filterOffset, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
-			} else {
-				out.Set(x, y, color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 255})
-			}
-		}
+	if numRoutines == 0 {
+		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	return &Image{img: out}, nil
+	var iBin, rBin, gBin, bBin [][]int
+	iBin = make([][]int, numRoutines)
+	rBin = make([][]int, numRoutines)
+	gBin = make([][]int, numRoutines)
+	bBin = make([][]int, numRoutines)
+	for ri := 0; ri < numRoutines; ri++ {
+		iBin[ri] = make([]int, levels+1)
+		rBin[ri] = make([]int, levels+1)
+		gBin[ri] = make([]int, levels+1)
+		bBin[ri] = make([]int, levels+1)
+	}
+
+	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
+		reset(iBin[ri])
+		reset(rBin[ri])
+		reset(gBin[ri])
+		reset(bBin[ri])
+
+		var maxIntensity int
+		var maxIndex int
+
+		for fy := -filterOffset; fy <= filterOffset; fy++ {
+			for fx := -filterOffset; fx <= filterOffset; fx++ {
+				fOffset := offset + (fx*4 + fy*inStride)
+
+				r := inPix[fOffset]
+				g := inPix[fOffset+1]
+				b := inPix[fOffset+2]
+				ci := int(roundToInt32((float64(r+g+b) / 3.0 * float64(levels)) / 255.0))
+				iBin[ri][ci]++
+				rBin[ri][ci] += int(r)
+				gBin[ri][ci] += int(g)
+				bBin[ri][ci] += int(b)
+
+				if iBin[ri][ci] > maxIntensity {
+					maxIntensity = iBin[ri][ci]
+					maxIndex = ci
+				}
+			}
+		}
+
+		outPix[offset] = uint8(rBin[ri][maxIndex] / maxIntensity)
+		outPix[offset+1] = uint8(gBin[ri][maxIndex] / maxIntensity)
+		outPix[offset+2] = uint8(bBin[ri][maxIndex] / maxIntensity)
+		outPix[offset+3] = 255
+	}
+
+	inBounds := image.Rectangle{
+		Min: image.Point{X: filterOffset, Y: filterOffset},
+		Max: image.Point{X: img.Bounds().Dx() - 2*filterOffset, Y: img.Bounds().Dy() - 2*filterOffset},
+	}
+
+	runParallel(numRoutines, img, inBounds, out, pf)
+	return out, nil
 }
 
 func roundToInt32(a float64) int32 {
@@ -134,7 +236,7 @@ func roundToInt32(a float64) int32 {
 }
 
 func reset(s []int) {
-	for i, _ := range s {
+	for i := range s {
 		s[i] = 0
 	}
 }
