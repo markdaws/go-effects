@@ -1,5 +1,5 @@
 # go-effects
-Parallel image manipulation effects, written in Go.
+Parallelized image manipulation effects, written in Go.
 
 ## Overview
 This library provides basic image effects, running on multiple goroutines to parallelize the processing.
