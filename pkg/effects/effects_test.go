@@ -104,13 +104,25 @@ func TestSobel(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
 
+	// The sobel image contains all of the intensity values, since we pass -1
 	timing.Time("sobel")
-	sobelImg, err := effects.Sobel(img, 0)
+	sobelImg, err := effects.Sobel(img, 0, -1)
 	require.Nil(t, err)
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel")
 
 	err = sobelImg.SaveAsPNG("../../test/cabin-sobel.png")
+	require.Nil(t, err)
+
+	// The sobel image contains pixels of value either 255 or 0, 255 if the sobel gradient is
+	// >= threshold, 0 otherwise
+	timing.Time("sobel-threshold-200")
+	sobelImg, err = effects.Sobel(img, 0, 200)
+	require.Nil(t, err)
+	require.NotNil(t, sobelImg)
+	timing.TimeEnd("sobel-threshold-200")
+
+	err = sobelImg.SaveAsPNG("../../test/cabin-sobel-threshold-200.png")
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds())

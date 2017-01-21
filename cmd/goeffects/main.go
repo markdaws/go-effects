@@ -10,9 +10,10 @@ import (
 )
 
 func main() {
-	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil'")
+	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil|sobel'")
 	flag.Parse()
 
+	var inPath string
 	switch *effect {
 	case "oil":
 		if len(flag.Args()) != 4 {
@@ -21,6 +22,15 @@ func main() {
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
+		inPath = flag.Arg(2)
+	case "sobel":
+		if len(flag.Args()) != 3 {
+			fmt.Println("The sobel effect requires 3 args, input path, output path, threshold\n")
+			fmt.Println("Sample usage: goeffect -effect=sobel mypic.jpg mypic-sobel.jpg 100\n")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+		inPath = flag.Arg(0)
 	case "":
 		fmt.Println("The effect option is required\n")
 		flag.PrintDefaults()
@@ -32,13 +42,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	img, err := effects.LoadImage(flag.Arg(2))
+	img, err := effects.LoadImage(inPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	switch *effect {
+	case "sobel":
+		threshold, err := strconv.Atoi(flag.Arg(2))
+		if err != nil {
+			fmt.Println("invalid threshold value")
+			os.Exit(1)
+		}
+		sobelImg, err := effects.Sobel(img, 0, threshold)
+		if err != nil {
+			fmt.Println("Failed to apply effect:", err)
+			os.Exit(1)
+		}
+
+		err = sobelImg.SaveAsPNG(flag.Arg(1))
+		if err != nil {
+			fmt.Println("Failed to save modified image:", err)
+			os.Exit(1)
+		}
+
 	case "oil":
 		filterSize, err := strconv.Atoi(flag.Arg(0))
 		if err != nil {

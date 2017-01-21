@@ -159,9 +159,12 @@ func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
 	return out, nil
 }
 
-// Sobel - the input image should be a grayscale image, the output will be a version of
-// the input image with the Sobel edge detector applied to it.
-func Sobel(img *Image, numRoutines int) (*Image, error) {
+// Sobel the input image should be a grayscale image, the output will be a version of
+// the input image with the Sobel edge detector applied to it. A value of -1 for threshold
+// will return an image whos rgb values are the sobel intensity values, if 0 <= threshold <= 255
+// then the rgb values will be 255 if the intensity is >= threshold and 0 if the intensity
+// is < threshold
+func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
@@ -191,6 +194,13 @@ func Sobel(img *Image, numRoutines int) (*Image, error) {
 		}
 
 		val := uint8(math.Sqrt(float64(px*px + py*py)))
+		if threshold != -1 {
+			if val >= uint8(threshold) {
+				val = 255
+			} else {
+				val = 0
+			}
+		}
 		outPix[offset] = val
 		outPix[offset+1] = val
 		outPix[offset+2] = val
