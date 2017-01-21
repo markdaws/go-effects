@@ -7,8 +7,11 @@ This library provides basic image effects, running on multiple goroutines to par
 ## Usage
 Take a look at pkg/effects/effects_test.go for examples of how to use this library
 
+##Package
+github.com/markdaws/go-effects/pkg/effects
+
 ##Docs
-See [godoc](https://godoc.org/github.com/markdaws/go-effects)
+See [godoc](https://godoc.org/github.com/markdaws/go-effects/pkg/effects)
 
 ##Effects
 ###Oil Painting
