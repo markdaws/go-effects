@@ -88,3 +88,31 @@ func TestGrayscale(t *testing.T) {
 	fmt.Println(img.Bounds())
 	fmt.Println(timing)
 }
+
+func TestSobel(t *testing.T) {
+	timing := effects.NewTiming()
+
+	timing.Time("load")
+	img, err := effects.LoadImage(cabinPath)
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("grayscale-luminosity")
+	grayImg, err := effects.Grayscale(img, 1, effects.GSLUMINOSITY)
+	timing.TimeEnd("grayscale-luminosity")
+	require.Nil(t, err)
+	require.NotNil(t, grayImg)
+
+	timing.Time("sobel")
+	sobelImg, err := effects.Sobel(img, 0)
+	require.Nil(t, err)
+	require.NotNil(t, sobelImg)
+	timing.TimeEnd("sobel")
+
+	err = sobelImg.SaveAsPNG("../../test/cabin-sobel.png")
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds())
+	fmt.Println(timing)
+}

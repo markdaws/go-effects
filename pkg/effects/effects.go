@@ -159,6 +159,67 @@ func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
 	return out, nil
 }
 
+// Sobel - the input image should be a grayscale image, the output will be a version of
+// the input image with the Sobel edge detector applied to it.
+func Sobel(img *Image, numRoutines int) (*Image, error) {
+	if numRoutines == 0 {
+		numRoutines = runtime.GOMAXPROCS(0)
+	}
+
+	out := &Image{img: image.NewRGBA(img.img.Bounds())}
+
+	sobelX := [][]int{
+		[]int{-1, 0, 1},
+		[]int{-2, 0, 2},
+		[]int{-1, 0, 1},
+	}
+	sobelY := [][]int{
+		[]int{-1, -2, -1},
+		[]int{0, 0, 0},
+		[]int{1, 2, 1},
+	}
+
+	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
+		var px, py int
+		for dy := -1; dy <= 1; dy++ {
+			for dx := -1; dx <= 1; dx++ {
+				pOffset := offset + (dx*4 + dy*inStride)
+				r := int(inPix[pOffset])
+				px += sobelX[dx+1][dy+1] * r
+				py += sobelY[dx+1][dy+1] * r
+			}
+		}
+
+		val := uint8(math.Sqrt(float64(px*px + py*py)))
+		outPix[offset] = val
+		outPix[offset+1] = val
+		outPix[offset+2] = val
+		outPix[offset+3] = 255
+	}
+
+	inBounds := image.Rectangle{
+		Min: image.Point{X: 1, Y: 1},
+		Max: image.Point{X: img.Bounds().Dx() - 2, Y: img.Bounds().Dy() - 2},
+	}
+
+	runParallel(numRoutines, img, inBounds, out, pf)
+	return out, nil
+
+	/*
+		sobel_x = [[-1,0,1],
+			[-2,0,2],
+			[-1,0,1]]
+
+		sobel_y = [[-1,-2,-1],
+			[0,0,0],
+			[1,2,1]]
+	*/
+
+	//
+	//val = Math.sqrt((pixel_x * pixel_x) + (pixel_y * pixel_y)).ceil
+	//edge[x,y] = ChunkyPNG::Color.grayscale(val)
+}
+
 // OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
 // goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
 // how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
