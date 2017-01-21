@@ -204,20 +204,6 @@ func Sobel(img *Image, numRoutines int) (*Image, error) {
 
 	runParallel(numRoutines, img, inBounds, out, pf)
 	return out, nil
-
-	/*
-		sobel_x = [[-1,0,1],
-			[-2,0,2],
-			[-1,0,1]]
-
-		sobel_y = [[-1,-2,-1],
-			[0,0,0],
-			[1,2,1]]
-	*/
-
-	//
-	//val = Math.sqrt((pixel_x * pixel_x) + (pixel_y * pixel_y)).ceil
-	//edge[x,y] = ChunkyPNG::Color.grayscale(val)
 }
 
 // OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
