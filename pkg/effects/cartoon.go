@@ -112,6 +112,6 @@ func Cartoon(img *Image, numRoutines int, opts CTOptions) (*Image, error) {
 	}
 
 	inBounds := img.Bounds()
-	runParallel(numRoutines, oilImg, inBounds, out, pf)
+	runParallel(numRoutines, oilImg, inBounds, out, pf, -1)
 	return out, nil
 }

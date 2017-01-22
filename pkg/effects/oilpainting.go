@@ -70,6 +70,6 @@ func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error
 		Max: image.Point{X: img.Bounds().Dx() - 2*filterOffset, Y: img.Bounds().Dy() - 2*filterOffset},
 	}
 
-	runParallel(numRoutines, img, inBounds, out, pf)
+	runParallel(numRoutines, img, inBounds, out, pf, -1)
 	return out, nil
 }

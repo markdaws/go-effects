@@ -12,7 +12,6 @@ import (
 	"sync"
 )
 
-//TODO: Block effect
 //TODO: Pointilize effect
 //TODO: Stained Glass
 
@@ -91,7 +90,7 @@ func LoadImage(path string) (*Image, error) {
 
 type pixelFunc func(ri, x, y, offset, inStride int, inPix, outPix []uint8)
 
-func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg *Image, pf pixelFunc) {
+func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg *Image, pf pixelFunc, blockWidth int) {
 	w := inBounds.Dx()
 	h := inBounds.Dy()
 
@@ -104,7 +103,13 @@ func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg
 
 	wg := sync.WaitGroup{}
 	xOffset := minX
-	widthPerRoutine := w / numRoutines
+
+	var widthPerRoutine int
+	if blockWidth != -1 {
+		widthPerRoutine = blockWidth
+	} else {
+		widthPerRoutine = w / numRoutines
+	}
 
 	for r := 0; r < numRoutines; r++ {
 		wg.Add(1)

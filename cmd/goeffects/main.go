@@ -10,35 +10,42 @@ import (
 )
 
 func main() {
-	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil|sobel|gaussian|cartoon'")
+	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil|sobel|gaussian|cartoon|pixelate'")
 	flag.Parse()
 
 	switch *effect {
 	case "oil":
 		if len(flag.Args()) != 4 {
 			fmt.Println("The oil effect requires 4 args, input path, output path, filterSize, levels\n")
-			fmt.Println("Sample usage: goeffect -effect=oil mypic.jpg mypic-oil.jpg 5 30\n")
+			fmt.Println("Sample usage: goeffects -effect=oil mypic.jpg mypic-oil.jpg 5 30\n")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
 	case "sobel":
 		if len(flag.Args()) != 3 {
 			fmt.Println("The sobel effect requires 3 args, input path, output path, threshold\n")
-			fmt.Println("Sample usage: goeffect -effect=sobel mypic.jpg mypic-sobel.jpg 100\n")
+			fmt.Println("Sample usage: goeffects -effect=sobel mypic.jpg mypic-sobel.jpg 100\n")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
 	case "gaussian":
 		if len(flag.Args()) != 4 {
 			fmt.Println("The gaussian effect requires 4 args, input path, output path, kernelSize, sigma\n")
-			fmt.Println("Sample usage: goeffect -effect=gaussian mypic.jpg mypic-gaussian.jpg 9 1\n")
+			fmt.Println("Sample usage: goeffects -effect=gaussian mypic.jpg mypic-gaussian.jpg 9 1\n")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
 	case "cartoon":
 		if len(flag.Args()) != 6 {
 			fmt.Println("The cartoon effect requires 6 args, input path, output path, blurStrength, edgeThreshold, oilBoldness, oilLevels")
-			fmt.Println("Sample usage: goeffect -effect=cartoon mypic.jpg mypic-cartoon.jpg 21 40 15 15")
+			fmt.Println("Sample usage: goeffects -effect=cartoon mypic.jpg mypic-cartoon.jpg 21 40 15 15")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+	case "pixelate":
+		if len(flag.Args()) != 3 {
+			fmt.Println("The pixelate effect requires 3 args, input path, output path, block size")
+			fmt.Println("Sample usage: goeffects -effect=pixelate mypic.jpg mypic-pixelate.jpg 12")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
@@ -139,7 +146,6 @@ func main() {
 			fmt.Println("Invalid oilLevels value")
 			os.Exit(1)
 		}
-
 		opts := effects.CTOptions{
 			BlurKernelSize: blurStrength,
 			EdgeThreshold:  edgeThreshold,
@@ -148,6 +154,17 @@ func main() {
 			DebugPath:      "",
 		}
 		outImg, err = effects.Cartoon(img, 0, opts)
+		if err != nil {
+			fmt.Println("Failed to apply effect:", err)
+			os.Exit(1)
+		}
+	case "pixelate":
+		blockSize, err := strconv.Atoi(flag.Arg(2))
+		if err != nil {
+			fmt.Println("Invalid blockSize value")
+			os.Exit(1)
+		}
+		outImg, err = effects.Pixelate(img, 0, blockSize)
 		if err != nil {
 			fmt.Println("Failed to apply effect:", err)
 			os.Exit(1)

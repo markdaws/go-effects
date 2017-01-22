@@ -49,7 +49,7 @@ func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, e
 		Max: image.Point{X: img.Bounds().Dx() - 2*kernelOffset, Y: img.Bounds().Dy() - 2*kernelOffset},
 	}
 
-	runParallel(numRoutines, img, inBounds, out, pf)
+	runParallel(numRoutines, img, inBounds, out, pf, -1)
 	return out, nil
 }
 

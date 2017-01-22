@@ -59,6 +59,6 @@ func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 		Max: image.Point{X: img.Bounds().Dx() - 2, Y: img.Bounds().Dy() - 2},
 	}
 
-	runParallel(numRoutines, img, inBounds, out, pf)
+	runParallel(numRoutines, img, inBounds, out, pf, -1)
 	return out, nil
 }

@@ -178,3 +178,25 @@ func TestCartoon(t *testing.T) {
 	fmt.Println(img.Bounds())
 	fmt.Println(timing)
 }
+
+func TestPixelate(t *testing.T) {
+	timing := effects.NewTiming()
+
+	timing.Time("load")
+	img, err := effects.LoadImage("../../test/turtle.jpg")
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("pixelate")
+	pixelImg, err := effects.Pixelate(img, 0, 20)
+	require.Nil(t, err)
+	require.NotNil(t, pixelImg)
+	timing.TimeEnd("pixelate")
+
+	err = pixelImg.SaveAsPNG("../../test/turtle-20-pixelate.png")
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds())
+	fmt.Println(timing)
+}
