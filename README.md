@@ -18,28 +18,36 @@ github.com/markdaws/go-effects/pkg/effects
 ##Docs
 See [godoc](https://godoc.org/github.com/markdaws/go-effects/pkg/effects)
 
-##Effects
-###Oil Painting
+##Oil Painting
 This effect takes an input image and renders it styled as an oil painting. The boldness of the stroke and the range of the palette can be modified.
 
-####Original Image
+###Original Image
 ![](examples/mountain.jpg)
-####Modified Image (filterSize:5, levels:30)
+###Modified Image (filterSize:5, levels:30)
 ![](examples/mountain-oil-15-30.jpg)
 
-###Grayscale
+##Grayscale
 Given an input image returns a grayscale version. Three algorithms are available, lightness (average of the max and min rgb value of a pixel), average (the average of the r,g,b values), luminosity (a weighted average of the rgb values based on how humans perceive color).
 
 The luminence algorithm generally gives the best results.
-####Original Image
+###Original Image
 ![](examples/cabin.jpg)
-####Modified Image (luminosity)
+###Modified Image (luminosity)
 ![](examples/cabin-gray-luminosity.png)
 
-###Sobel
+##Sobel
 Given an input image returns an image containing edge gradients values, based on the Sobel operator.  By default the pixel r,g,b values all contain the gradient intensity, but if you supply a threshold value to the function, then if the gradient intensity is >= threshold the pixel value will be 255 and if it is less than it will be 0.  This way you can set some threshold and use this for edge detection.
 
-####Original Image
+###Original Image
 ![](examples/cabin.jpg)
-####Modified Image (Sobel)
+###Modified Image (Sobel)
 ![](examples/cabin-sobel.png)
+
+
+##Gaussian
+Applies a Gaussian blur to the input image. You can specify the kernelSize, larger values equate to more blurring and sigma, larger values give more weighting to pixels further from the target pixel.  Same values would be 11, 1 for example. The kernelSize must be an odd number.
+
+###Original Image
+![](examples/face.jpg)
+###Modified Image (Gaussian)
+![](examples/face-gaussian.png)
