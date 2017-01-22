@@ -8,7 +8,9 @@ import (
 	"image/png"
 	"math"
 	"os"
+	"path"
 	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -20,6 +22,21 @@ type Image struct {
 // Bounds returns the bounds of the pixels in the image
 func (i *Image) Bounds() image.Rectangle {
 	return i.img.Bounds()
+}
+
+// Save saves the image as the file type defined by the extension in the path e.g. ,jpg or .png
+func (i *Image) Save(outPath string) error {
+	ext := strings.ToLower(path.Ext(outPath))
+
+	switch path.Ext(outPath) {
+	case ".jpg", ".jpeg":
+		return i.SaveAsJPG(outPath, 90)
+	case ".png":
+		return i.SaveAsPNG(outPath)
+	default:
+		return fmt.Errorf("unsupported file type: %s", ext)
+	}
+	return nil
 }
 
 // SaveAsJPG saves the image as a JPG. quality is between 1 and 100, 100 being best
@@ -216,6 +233,78 @@ func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 	return out, nil
 }
 
+func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, error) {
+	if !isOddInt(kernelSize) {
+		return nil, fmt.Errorf("kernel size must be odd")
+	}
+
+	if numRoutines == 0 {
+		numRoutines = runtime.GOMAXPROCS(0)
+	}
+
+	out := &Image{img: image.NewRGBA(img.img.Bounds())}
+
+	kernel := gaussianKernel(kernelSize, sigma)
+
+	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
+		var gr, gb, gg float64
+		kernelOffset := (kernelSize - 1) / 2
+		for dy := -kernelOffset; dy <= kernelOffset; dy++ {
+			for dx := -kernelOffset; dx <= kernelOffset; dx++ {
+				pOffset := offset + (dx*4 + dy*inStride)
+				r := inPix[pOffset]
+				g := inPix[pOffset+1]
+				b := inPix[pOffset+2]
+
+				scale := kernel[dx+kernelOffset][dy+kernelOffset]
+				gr += scale * float64(r)
+				gg += scale * float64(g)
+				gb += scale * float64(b)
+			}
+		}
+
+		outPix[offset] = uint8(gr)
+		outPix[offset+1] = uint8(gg)
+		outPix[offset+2] = uint8(gb)
+		outPix[offset+3] = 255
+	}
+
+	kernelOffset := (kernelSize - 1) / 2
+	inBounds := image.Rectangle{
+		Min: image.Point{X: kernelOffset, Y: kernelOffset},
+		Max: image.Point{X: img.Bounds().Dx() - 2*kernelOffset, Y: img.Bounds().Dy() - 2*kernelOffset},
+	}
+
+	runParallel(numRoutines, img, inBounds, out, pf)
+	return out, nil
+}
+
+func gaussianKernel(dimension int, sigma float64) [][]float64 {
+	k := make([][]float64, dimension)
+	sum := 0.0
+	for x := 0; x < dimension; x++ {
+		k[x] = make([]float64, dimension)
+		for y := 0; y < dimension; y++ {
+			k[x][y] = gaussianXY(x, y, sigma)
+			sum += k[x][y]
+		}
+	}
+
+	scale := 1.0 / sum
+	for y := 0; y < dimension; y++ {
+		for x := 0; x < dimension; x++ {
+			k[x][y] *= scale
+		}
+	}
+
+	return k
+}
+
+// expects x,y to be 0 at the center of the kernel
+func gaussianXY(x, y int, sigma float64) float64 {
+	return ((1.0 / (2 * math.Pi * sigma * sigma)) * math.E) - (float64(x*x+y*y) / (2 * sigma * sigma))
+}
+
 // OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
 // goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
 // how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
@@ -290,6 +379,10 @@ func roundToInt32(a float64) int32 {
 		return int32(a - 0.5)
 	}
 	return int32(a + 0.5)
+}
+
+func isOddInt(i int) bool {
+	return i%2 != 0
 }
 
 func reset(s []int) {

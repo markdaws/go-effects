@@ -128,3 +128,24 @@ func TestSobel(t *testing.T) {
 	fmt.Println(img.Bounds())
 	fmt.Println(timing)
 }
+
+func TestGaussian(t *testing.T) {
+	timing := effects.NewTiming()
+
+	timing.Time("load")
+	img, err := effects.LoadImage("../../test/face.jpg")
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("gaussian")
+	gaussianImg, err := effects.Gaussian(img, 0, 21, 1)
+	timing.TimeEnd("gaussian")
+	require.Nil(t, err)
+	require.NotNil(t, gaussianImg)
+	err = gaussianImg.SaveAsPNG("../../test/face-gaussian.png")
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds())
+	fmt.Println(timing)
+}
