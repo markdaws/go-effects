@@ -6,13 +6,15 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
-	"math"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 	"sync"
 )
+
+//TODO: Block effect
+//TODO: Pointilize effect
+//TODO: Stained Glass
 
 // Image wrapper around internal pixels
 type Image struct {
@@ -87,20 +89,6 @@ func LoadImage(path string) (*Image, error) {
 	return &Image{img: outImg}, nil
 }
 
-// GSAlgo the type of algorithm to use when converting an image to it's grayscale equivalent
-type GSAlgo int
-
-const (
-	// GSLIGHTNESS is the average of the min and max r,g,b value
-	GSLIGHTNESS GSAlgo = iota
-
-	// GSAVERAGE is the average of the r,g,b values of each pixel
-	GSAVERAGE
-
-	// GSLUMINOSITY used a weighting for r,g,b based on how the human eye perceives colors
-	GSLUMINOSITY
-)
-
 type pixelFunc func(ri, x, y, offset, inStride int, inPix, outPix []uint8)
 
 func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg *Image, pf pixelFunc) {
@@ -137,241 +125,6 @@ func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg
 		}
 	}
 	wg.Wait()
-}
-
-// Grayscale renders the input image as a grayscale image. numRoutines specifies how many
-// goroutines should be used to process the image in parallel, use 0 to let the library decide
-func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
-
-	if numRoutines == 0 {
-		numRoutines = runtime.GOMAXPROCS(0)
-	}
-
-	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
-		var r, g, b uint8 = inPix[offset], inPix[offset+1], inPix[offset+2]
-		switch algo {
-		case GSLIGHTNESS:
-			max := math.Max(math.Max(float64(r), float64(g)), float64(b))
-			min := math.Max(math.Min(float64(r), float64(g)), float64(b))
-			r = uint8(max + min/2)
-			g = r
-			b = r
-		case GSAVERAGE:
-			r = (r + g + b) / 3
-			g = r
-			b = r
-		case GSLUMINOSITY:
-			r = uint8(0.21*float64(r) + 0.72*float64(g) + 0.07*float64(b))
-			g = r
-			b = r
-		}
-		outPix[offset] = r
-		outPix[offset+1] = g
-		outPix[offset+2] = b
-		outPix[offset+3] = 255
-	}
-
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-	runParallel(numRoutines, img, img.Bounds(), out, pf)
-	return out, nil
-}
-
-// Sobel the input image should be a grayscale image, the output will be a version of
-// the input image with the Sobel edge detector applied to it. A value of -1 for threshold
-// will return an image whos rgb values are the sobel intensity values, if 0 <= threshold <= 255
-// then the rgb values will be 255 if the intensity is >= threshold and 0 if the intensity
-// is < threshold
-func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
-	if numRoutines == 0 {
-		numRoutines = runtime.GOMAXPROCS(0)
-	}
-
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-
-	sobelX := [][]int{
-		[]int{-1, 0, 1},
-		[]int{-2, 0, 2},
-		[]int{-1, 0, 1},
-	}
-	sobelY := [][]int{
-		[]int{-1, -2, -1},
-		[]int{0, 0, 0},
-		[]int{1, 2, 1},
-	}
-
-	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
-		var px, py int
-		for dy := -1; dy <= 1; dy++ {
-			for dx := -1; dx <= 1; dx++ {
-				pOffset := offset + (dx*4 + dy*inStride)
-				r := int(inPix[pOffset])
-				px += sobelX[dx+1][dy+1] * r
-				py += sobelY[dx+1][dy+1] * r
-			}
-		}
-
-		val := uint8(math.Sqrt(float64(px*px + py*py)))
-		if threshold != -1 {
-			if val >= uint8(threshold) {
-				val = 255
-			} else {
-				val = 0
-			}
-		}
-		outPix[offset] = val
-		outPix[offset+1] = val
-		outPix[offset+2] = val
-		outPix[offset+3] = 255
-	}
-
-	inBounds := image.Rectangle{
-		Min: image.Point{X: 1, Y: 1},
-		Max: image.Point{X: img.Bounds().Dx() - 2, Y: img.Bounds().Dy() - 2},
-	}
-
-	runParallel(numRoutines, img, inBounds, out, pf)
-	return out, nil
-}
-
-func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, error) {
-	if !isOddInt(kernelSize) {
-		return nil, fmt.Errorf("kernel size must be odd")
-	}
-
-	if numRoutines == 0 {
-		numRoutines = runtime.GOMAXPROCS(0)
-	}
-
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-
-	kernel := gaussianKernel(kernelSize, sigma)
-
-	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
-		var gr, gb, gg float64
-		kernelOffset := (kernelSize - 1) / 2
-		for dy := -kernelOffset; dy <= kernelOffset; dy++ {
-			for dx := -kernelOffset; dx <= kernelOffset; dx++ {
-				pOffset := offset + (dx*4 + dy*inStride)
-				r := inPix[pOffset]
-				g := inPix[pOffset+1]
-				b := inPix[pOffset+2]
-
-				scale := kernel[dx+kernelOffset][dy+kernelOffset]
-				gr += scale * float64(r)
-				gg += scale * float64(g)
-				gb += scale * float64(b)
-			}
-		}
-
-		outPix[offset] = uint8(gr)
-		outPix[offset+1] = uint8(gg)
-		outPix[offset+2] = uint8(gb)
-		outPix[offset+3] = 255
-	}
-
-	kernelOffset := (kernelSize - 1) / 2
-	inBounds := image.Rectangle{
-		Min: image.Point{X: kernelOffset, Y: kernelOffset},
-		Max: image.Point{X: img.Bounds().Dx() - 2*kernelOffset, Y: img.Bounds().Dy() - 2*kernelOffset},
-	}
-
-	runParallel(numRoutines, img, inBounds, out, pf)
-	return out, nil
-}
-
-func gaussianKernel(dimension int, sigma float64) [][]float64 {
-	k := make([][]float64, dimension)
-	sum := 0.0
-	for x := 0; x < dimension; x++ {
-		k[x] = make([]float64, dimension)
-		for y := 0; y < dimension; y++ {
-			k[x][y] = gaussianXY(x, y, sigma)
-			sum += k[x][y]
-		}
-	}
-
-	scale := 1.0 / sum
-	for y := 0; y < dimension; y++ {
-		for x := 0; x < dimension; x++ {
-			k[x][y] *= scale
-		}
-	}
-
-	return k
-}
-
-// expects x,y to be 0 at the center of the kernel
-func gaussianXY(x, y int, sigma float64) float64 {
-	return ((1.0 / (2 * math.Pi * sigma * sigma)) * math.E) - (float64(x*x+y*y) / (2 * sigma * sigma))
-}
-
-// OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
-// goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
-// how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
-// will be grouped in to, start with values 5,30 to see how that works.
-func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error) {
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-	levels = levels - 1
-	filterOffset := (filterSize - 1) / 2
-
-	if numRoutines == 0 {
-		numRoutines = runtime.GOMAXPROCS(0)
-	}
-
-	var iBin, rBin, gBin, bBin [][]int
-	iBin = make([][]int, numRoutines)
-	rBin = make([][]int, numRoutines)
-	gBin = make([][]int, numRoutines)
-	bBin = make([][]int, numRoutines)
-	for ri := 0; ri < numRoutines; ri++ {
-		iBin[ri] = make([]int, levels+1)
-		rBin[ri] = make([]int, levels+1)
-		gBin[ri] = make([]int, levels+1)
-		bBin[ri] = make([]int, levels+1)
-	}
-
-	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
-		reset(iBin[ri])
-		reset(rBin[ri])
-		reset(gBin[ri])
-		reset(bBin[ri])
-
-		var maxIntensity int
-		var maxIndex int
-
-		for fy := -filterOffset; fy <= filterOffset; fy++ {
-			for fx := -filterOffset; fx <= filterOffset; fx++ {
-				fOffset := offset + (fx*4 + fy*inStride)
-
-				r := inPix[fOffset]
-				g := inPix[fOffset+1]
-				b := inPix[fOffset+2]
-				ci := int(roundToInt32((float64(r+g+b) / 3.0 * float64(levels)) / 255.0))
-				iBin[ri][ci]++
-				rBin[ri][ci] += int(r)
-				gBin[ri][ci] += int(g)
-				bBin[ri][ci] += int(b)
-
-				if iBin[ri][ci] > maxIntensity {
-					maxIntensity = iBin[ri][ci]
-					maxIndex = ci
-				}
-			}
-		}
-
-		outPix[offset] = uint8(rBin[ri][maxIndex] / maxIntensity)
-		outPix[offset+1] = uint8(gBin[ri][maxIndex] / maxIntensity)
-		outPix[offset+2] = uint8(bBin[ri][maxIndex] / maxIntensity)
-		outPix[offset+3] = 255
-	}
-
-	inBounds := image.Rectangle{
-		Min: image.Point{X: filterOffset, Y: filterOffset},
-		Max: image.Point{X: img.Bounds().Dx() - 2*filterOffset, Y: img.Bounds().Dy() - 2*filterOffset},
-	}
-
-	runParallel(numRoutines, img, inBounds, out, pf)
-	return out, nil
 }
 
 func roundToInt32(a float64) int32 {

@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil|sobel|gaussian'")
+	effect := flag.String("effect", "", "The name of the effect to apply. Values are 'oil|sobel|gaussian|cartoon'")
 	flag.Parse()
 
 	switch *effect {
@@ -32,6 +32,13 @@ func main() {
 		if len(flag.Args()) != 4 {
 			fmt.Println("The gaussian effect requires 4 args, input path, output path, kernelSize, sigma\n")
 			fmt.Println("Sample usage: goeffect -effect=gaussian mypic.jpg mypic-gaussian.jpg 9 1\n")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+	case "cartoon":
+		if len(flag.Args()) != 6 {
+			fmt.Println("The cartoon effect requires 6 args, input path, output path, blurStrength, edgeThreshold, oilBoldness, oilLevels")
+			fmt.Println("Sample usage: goeffect -effect=cartoon mypic.jpg mypic-cartoon.jpg 21 40 15 15")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
@@ -107,6 +114,40 @@ func main() {
 		}
 
 		outImg, err = effects.OilPainting(img, 0, filterSize, levels)
+		if err != nil {
+			fmt.Println("Failed to apply effect:", err)
+			os.Exit(1)
+		}
+	case "cartoon":
+		blurStrength, err := strconv.Atoi(flag.Arg(2))
+		if err != nil {
+			fmt.Println("Invalid blurStrength value")
+			os.Exit(1)
+		}
+		edgeThreshold, err := strconv.Atoi(flag.Arg(3))
+		if err != nil {
+			fmt.Println("Invalid edgeThreshold value")
+			os.Exit(1)
+		}
+		oilFilterSize, err := strconv.Atoi(flag.Arg(4))
+		if err != nil {
+			fmt.Println("Invalid oilFilterSize value")
+			os.Exit(1)
+		}
+		oilLevels, err := strconv.Atoi(flag.Arg(5))
+		if err != nil {
+			fmt.Println("Invalid oilLevels value")
+			os.Exit(1)
+		}
+
+		opts := effects.CTOptions{
+			BlurKernelSize: blurStrength,
+			EdgeThreshold:  edgeThreshold,
+			OilFilterSize:  oilFilterSize,
+			OilLevels:      oilLevels,
+			DebugPath:      "",
+		}
+		outImg, err = effects.Cartoon(img, 0, opts)
 		if err != nil {
 			fmt.Println("Failed to apply effect:", err)
 			os.Exit(1)

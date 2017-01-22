@@ -93,7 +93,7 @@ func TestSobel(t *testing.T) {
 	timing := effects.NewTiming()
 
 	timing.Time("load")
-	img, err := effects.LoadImage(cabinPath)
+	img, err := effects.LoadImage("../../test/turtle.jpg")
 	timing.TimeEnd("load")
 	require.Nil(t, err)
 	require.NotNil(t, img)
@@ -111,7 +111,7 @@ func TestSobel(t *testing.T) {
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel")
 
-	err = sobelImg.SaveAsPNG("../../test/cabin-sobel.png")
+	err = sobelImg.SaveAsPNG("../../test/turtle-sobel.png")
 	require.Nil(t, err)
 
 	// The sobel image contains pixels of value either 255 or 0, 255 if the sobel gradient is
@@ -122,7 +122,7 @@ func TestSobel(t *testing.T) {
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel-threshold-200")
 
-	err = sobelImg.SaveAsPNG("../../test/cabin-sobel-threshold-200.png")
+	err = sobelImg.SaveAsPNG("../../test/turtle-sobel-threshold-200.png")
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds())
@@ -144,6 +144,35 @@ func TestGaussian(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, gaussianImg)
 	err = gaussianImg.SaveAsPNG("../../test/face-gaussian.png")
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds())
+	fmt.Println(timing)
+}
+
+func TestCartoon(t *testing.T) {
+	timing := effects.NewTiming()
+
+	timing.Time("load")
+	img, err := effects.LoadImage("../../test/turtle.jpg")
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("cartoon")
+	opts := effects.CTOptions{
+		BlurKernelSize: 21,
+		EdgeThreshold:  40,
+		OilFilterSize:  20,
+		OilLevels:      12,
+		DebugPath:      "../../test",
+	}
+	cartoonImg, err := effects.Cartoon(img, 0, opts)
+	require.Nil(t, err)
+	require.NotNil(t, cartoonImg)
+	timing.TimeEnd("cartoon")
+
+	err = cartoonImg.SaveAsPNG("../../test/turtle-cartoon.png")
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds())
