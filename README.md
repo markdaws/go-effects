@@ -37,14 +37,13 @@ This effect renders an image as if it were drawn as a cartoon. The effect is ach
 ![](examples/turtle-cartoon.png)
 
 
-##Grayscale
-Given an input image returns a grayscale version. Three algorithms are available, lightness (average of the max and min rgb value of a pixel), average (the average of the r,g,b values), luminosity (a weighted average of the rgb values based on how humans perceive color).
+##Pixelate
+Renders the input image as a pixelated image, based on the blockSize specified by the caller.
 
-The luminence algorithm generally gives the best results.
 ###Original Image
-![](examples/cabin.jpg)
-###Modified Image (luminosity)
-![](examples/cabin-gray-luminosity.png)
+![](examples/mountain.jpg)
+###Modified Image (pixelate, blockSize: 20)
+![](examples/mountain-pixelate-20.png)
 
 
 ##Sobel
@@ -63,3 +62,13 @@ Applies a Gaussian blur to the input image. You can specify the kernelSize, larg
 ![](examples/face.jpg)
 ###Modified Image (Gaussian)
 ![](examples/face-gaussian.png)
+
+
+##Grayscale
+Given an input image returns a grayscale version. Three algorithms are available, lightness (average of the max and min rgb value of a pixel), average (the average of the r,g,b values), luminosity (a weighted average of the rgb values based on how humans perceive color).
+
+The luminence algorithm generally gives the best results.
+###Original Image
+![](examples/cabin.jpg)
+###Modified Image (luminosity)
+![](examples/cabin-gray-luminosity.png)
