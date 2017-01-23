@@ -60,7 +60,7 @@ type Image struct {
 // SaveOpts specifies some save parameters that can be specified when saving
 // an image
 type SaveOpts struct {
-	// JPEGCompression a value between 1 and 100, if 0 specified, defaults to 90.
+	// JPEGCompression a value between 1 and 100, if 0 specified, defaults to 95.
 	// Higher values are better quality. Only applicable if the file ends with a
 	// .jpg or .jpeg extension
 	JPEGCompression int
@@ -94,7 +94,7 @@ func (i *Image) Save(outPath string, opts SaveOpts) error {
 	case ".jpg", ".jpeg":
 		cmpLvl := opts.JPEGCompression
 		if cmpLvl == 0 {
-			cmpLvl = 90
+			cmpLvl = 95
 		}
 		return final.saveAsJPG(outPath, cmpLvl)
 	case ".png":
