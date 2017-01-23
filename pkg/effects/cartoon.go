@@ -67,7 +67,7 @@ func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 		return nil, err
 	}
 
-	edgeImg, err := Sobel(grayImg, numRoutines, opts.EdgeThreshold)
+	edgeImg, err := Sobel(grayImg, numRoutines, opts.EdgeThreshold, false)
 	if err != nil {
 		return nil, err
 	}

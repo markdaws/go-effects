@@ -22,9 +22,9 @@ func main() {
 			os.Exit(1)
 		}
 	case "sobel":
-		if len(flag.Args()) != 3 {
-			fmt.Println("The sobel effect requires 3 args, input path, output path, threshold\n")
-			fmt.Println("Sample usage: goeffects -effect=sobel mypic.jpg mypic-sobel.jpg 100\n")
+		if len(flag.Args()) != 4 {
+			fmt.Println("The sobel effect requires 4 args, input path, output path, threshold invert\n")
+			fmt.Println("Sample usage: goeffects -effect=sobel mypic.jpg mypic-sobel.jpg 100 false\n")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
@@ -94,7 +94,12 @@ func main() {
 			fmt.Println("invalid threshold value")
 			os.Exit(1)
 		}
-		outImg, err = effects.Sobel(img, 0, threshold)
+		invert, err := strconv.ParseBool(flag.Arg(3))
+		if err != nil {
+			fmt.Println("invalid invert value")
+			os.Exit(1)
+		}
+		outImg, err = effects.Sobel(img, 0, threshold, invert)
 		if err != nil {
 			fmt.Println("Failed to apply effect:", err)
 			os.Exit(1)

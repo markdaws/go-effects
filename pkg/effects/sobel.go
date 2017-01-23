@@ -11,7 +11,7 @@ import (
 // will return an image whos rgb values are the sobel intensity values, if 0 <= threshold <= 255
 // then the rgb values will be 255 if the intensity is >= threshold and 0 if the intensity
 // is < threshold
-func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
+func Sobel(img *Image, numRoutines, threshold int, invert bool) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
@@ -45,6 +45,10 @@ func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 			} else {
 				val = 0
 			}
+		}
+
+		if invert {
+			val = 255 - val
 		}
 		outPix[offset] = val
 		outPix[offset+1] = val
