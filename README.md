@@ -42,8 +42,8 @@ Renders the input image as a pixelated image, based on the blockSize specified b
 
 ###Original Image
 ![](examples/mountain.jpg)
-###Modified Image (pixelate, blockSize: 20)
-![](examples/mountain-pixelate-20.png)
+###Modified Image (pixelate, blockSize: 10)
+![](examples/mountain-pixelate-10.png)
 
 
 ##Sobel
