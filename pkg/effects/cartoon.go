@@ -89,9 +89,7 @@ func Cartoon(img *Image, numRoutines int, opts CTOptions) (*Image, error) {
 		}
 	}
 
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
 	edgePix := edgeImg.img.Pix
-
 	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 
 		r := inPix[offset]
@@ -111,7 +109,19 @@ func Cartoon(img *Image, numRoutines int, opts CTOptions) (*Image, error) {
 		outPix[offset+3] = 255
 	}
 
-	inBounds := img.Bounds()
-	runParallel(numRoutines, oilImg, inBounds, out, pf, -1)
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+
+		// Have to take in to account pixels are lost in some of the effects around the edges,
+		// so so only have the area where the two rections intersect from the edge detection and
+		// the oil painting effect
+		Bounds: oilImg.Bounds.Intersect(edgeImg.Bounds),
+	}
+	runParallel(numRoutines, oilImg, out.Bounds, out, pf, 0)
 	return out, nil
 }

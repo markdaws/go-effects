@@ -52,7 +52,21 @@ func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
 		outPix[offset+3] = 255
 	}
 
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-	runParallel(numRoutines, img, img.Bounds(), out, pf, -1)
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+		Bounds: Rect{
+			X:      img.Bounds.X,
+			Y:      img.Bounds.Y,
+			Width:  img.Bounds.Width,
+			Height: img.Bounds.Height,
+		},
+	}
+
+	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
 }

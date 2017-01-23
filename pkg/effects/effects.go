@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"math"
 	"os"
 	"path"
 	"strings"
@@ -15,14 +16,45 @@ import (
 //TODO: Pointilize effect
 //TODO: Stained Glass
 
-// Image wrapper around internal pixels
-type Image struct {
-	img *image.RGBA
+// Rect used for image bounds
+type Rect struct {
+	X      int
+	Y      int
+	Width  int
+	Height int
 }
 
-// Bounds returns the bounds of the pixels in the image
-func (i *Image) Bounds() image.Rectangle {
-	return i.img.Bounds()
+func (r Rect) String() string {
+	return fmt.Sprintf("X:%d, Y:%d, Width:%d, Height:%d", r.X, r.Y, r.Width, r.Height)
+}
+func (r Rect) Intersect(r2 Rect) Rect {
+	x := math.Max(float64(r.X), float64(r2.X))
+	num1 := math.Min(float64(r.X+r.Width), float64(r2.X+r2.Width))
+
+	y := math.Max(float64(r.Y), float64(r2.Y))
+	num2 := math.Min(float64(r.Y+r.Height), float64(r2.Y+r2.Height))
+	if num1 >= x && num2 >= y {
+		return Rect{X: int(x), Y: int(y), Width: int(num1 - x), Height: int(num2 - y)}
+	} else {
+		return Rect{}
+	}
+}
+func (r Rect) IsEmpty() bool {
+	return r.Width == 0 || r.Height == 0
+}
+func (r Rect) ToImageRect() image.Rectangle {
+	return image.Rectangle{
+		Min: image.Point{X: r.X, Y: r.Y},
+		Max: image.Point{X: r.X + r.Width, Y: r.Y + r.Height},
+	}
+}
+
+// Image wrapper around internal pixels
+type Image struct {
+	img    *image.RGBA
+	Bounds Rect
+	Width  int
+	Height int
 }
 
 // Save saves the image as the file type defined by the extension in the path e.g. ,jpg or .png
@@ -85,19 +117,26 @@ func LoadImage(path string) (*Image, error) {
 	outImg := image.NewRGBA(img.Bounds())
 	draw.Draw(outImg, img.Bounds(), img, image.Point{}, draw.Over)
 
-	return &Image{img: outImg}, nil
+	w := img.Bounds().Max.X
+	h := img.Bounds().Max.Y
+	return &Image{
+		img:    outImg,
+		Width:  w,
+		Height: h,
+		Bounds: Rect{X: 0, Y: 0, Width: w, Height: h},
+	}, nil
 }
 
 type pixelFunc func(ri, x, y, offset, inStride int, inPix, outPix []uint8)
 
-func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg *Image, pf pixelFunc, blockWidth int) {
-	w := inBounds.Dx()
-	h := inBounds.Dy()
+func runParallel(numRoutines int, inImg *Image, inBounds Rect, outImg *Image, pf pixelFunc, blockWidth int) {
+	w := inBounds.Width
+	h := inBounds.Height
 
-	minX := inBounds.Min.X
-	minY := inBounds.Min.Y
+	minX := inBounds.X
+	minY := inBounds.Y
+
 	stride := inImg.img.Stride
-	start := minY*stride + minX*4
 	inPix := inImg.img.Pix
 	outPix := outImg.img.Pix
 
@@ -105,7 +144,7 @@ func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg
 	xOffset := minX
 
 	var widthPerRoutine int
-	if blockWidth != -1 {
+	if blockWidth != 0 {
 		widthPerRoutine = blockWidth
 	} else {
 		widthPerRoutine = w / numRoutines
@@ -114,10 +153,14 @@ func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg
 	for r := 0; r < numRoutines; r++ {
 		wg.Add(1)
 
+		if r == numRoutines-1 {
+			widthPerRoutine = (minX + w) - xOffset
+		}
+
 		go func(ri, xStart, yStart, width, height int) {
 			for x := xStart; x < xStart+width; x++ {
 				for y := yStart; y < yStart+height; y++ {
-					offset := start + y*stride + x*4
+					offset := y*stride + x*4
 					pf(ri, x, y, offset, stride, inPix, outPix)
 				}
 			}
@@ -125,9 +168,6 @@ func runParallel(numRoutines int, inImg *Image, inBounds image.Rectangle, outImg
 		}(r, xOffset, minY, widthPerRoutine, h)
 
 		xOffset += widthPerRoutine
-		if r == numRoutines-1 {
-			widthPerRoutine = w - xOffset
-		}
 	}
 	wg.Wait()
 }

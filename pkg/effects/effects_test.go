@@ -40,7 +40,7 @@ func TestOilPainting(t *testing.T) {
 	err = oilImg.SaveAsPNG("../../test/cabin-parallel-oil.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }
 
@@ -85,7 +85,7 @@ func TestGrayscale(t *testing.T) {
 	err = grayImg.SaveAsPNG("../../test/cabin-gray-parallel-luminosity.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }
 
@@ -125,7 +125,7 @@ func TestSobel(t *testing.T) {
 	err = sobelImg.SaveAsPNG("../../test/turtle-sobel-threshold-200.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }
 
@@ -146,7 +146,7 @@ func TestGaussian(t *testing.T) {
 	err = gaussianImg.SaveAsPNG("../../test/face-gaussian.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }
 
@@ -175,7 +175,7 @@ func TestCartoon(t *testing.T) {
 	err = cartoonImg.SaveAsPNG("../../test/turtle-cartoon.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }
 
@@ -197,6 +197,6 @@ func TestPixelate(t *testing.T) {
 	err = pixelImg.SaveAsPNG("../../test/turtle-20-pixelate.png")
 	require.Nil(t, err)
 
-	fmt.Println(img.Bounds())
+	fmt.Println(img.Bounds)
 	fmt.Println(timing)
 }

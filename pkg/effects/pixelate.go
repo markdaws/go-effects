@@ -11,15 +11,13 @@ func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	if img.Bounds().Dx()%blockSize != 0 ||
-		img.Bounds().Dy()%blockSize != 0 {
+	if img.Bounds.Width%blockSize != 0 ||
+		img.Bounds.Height%blockSize != 0 {
 		return nil, fmt.Errorf("blockSize must divide exactly into the width and the height of the input image")
 	}
 
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-
-	nBlocksX := img.Bounds().Dx() / blockSize
-	nBlocksY := img.Bounds().Dy() / blockSize
+	nBlocksX := img.Bounds.Width / blockSize
+	nBlocksY := img.Bounds.Height / blockSize
 	nBlocks := nBlocksX * nBlocksY
 
 	blocksR := make([]int, nBlocks)
@@ -49,9 +47,24 @@ func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 
 	var pixelsPerRoutine int
 
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+		Bounds: Rect{
+			X:      img.Bounds.X,
+			Y:      img.Bounds.Y,
+			Width:  img.Bounds.Width,
+			Height: img.Bounds.Height,
+		},
+	}
+
 	// Make sure the goroutines process on a block boundary
-	pixelsPerRoutine = ((img.Bounds().Dx() / numRoutines) / blockSize) * blockSize
-	runParallel(numRoutines, img, img.Bounds(), out, pfCalc, pixelsPerRoutine)
+	pixelsPerRoutine = ((img.Bounds.Width / numRoutines) / blockSize) * blockSize
+	runParallel(numRoutines, img, out.Bounds, out, pfCalc, pixelsPerRoutine)
 
 	// Divide by number of pixels
 	for i := 0; i < nBlocks; i++ {
@@ -60,6 +73,6 @@ func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 		blocksB[i] /= pixelsPerBlock
 	}
 
-	runParallel(numRoutines, img, img.Bounds(), out, pfSet, pixelsPerRoutine)
+	runParallel(numRoutines, img, out.Bounds, out, pfSet, pixelsPerRoutine)
 	return out, nil
 }

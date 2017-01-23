@@ -16,8 +16,6 @@ func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-
 	sobelX := [][]int{
 		[]int{-1, 0, 1},
 		[]int{-2, 0, 2},
@@ -54,11 +52,21 @@ func Sobel(img *Image, numRoutines, threshold int) (*Image, error) {
 		outPix[offset+3] = 255
 	}
 
-	inBounds := image.Rectangle{
-		Min: image.Point{X: 1, Y: 1},
-		Max: image.Point{X: img.Bounds().Dx() - 2, Y: img.Bounds().Dy() - 2},
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+		Bounds: Rect{
+			X:      img.Bounds.X + 1,
+			Y:      img.Bounds.Y + 1,
+			Width:  img.Bounds.Width - 2,
+			Height: img.Bounds.Height - 2,
+		},
 	}
 
-	runParallel(numRoutines, img, inBounds, out, pf, -1)
+	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
 }

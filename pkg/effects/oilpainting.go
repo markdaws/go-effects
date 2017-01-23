@@ -10,7 +10,6 @@ import (
 // how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
 // will be grouped in to, start with values 5,30 to see how that works.
 func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error) {
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
 	levels = levels - 1
 	filterOffset := (filterSize - 1) / 2
 
@@ -42,7 +41,6 @@ func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error
 		for fy := -filterOffset; fy <= filterOffset; fy++ {
 			for fx := -filterOffset; fx <= filterOffset; fx++ {
 				fOffset := offset + (fx*4 + fy*inStride)
-
 				r := inPix[fOffset]
 				g := inPix[fOffset+1]
 				b := inPix[fOffset+2]
@@ -65,11 +63,20 @@ func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error
 		outPix[offset+3] = 255
 	}
 
-	inBounds := image.Rectangle{
-		Min: image.Point{X: filterOffset, Y: filterOffset},
-		Max: image.Point{X: img.Bounds().Dx() - 2*filterOffset, Y: img.Bounds().Dy() - 2*filterOffset},
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+		Bounds: Rect{
+			X:      img.Bounds.X + filterOffset,
+			Y:      img.Bounds.Y + filterOffset,
+			Width:  img.Bounds.Width - 2*filterOffset,
+			Height: img.Bounds.Height - 2*filterOffset,
+		},
 	}
-
-	runParallel(numRoutines, img, inBounds, out, pf, -1)
+	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
 }

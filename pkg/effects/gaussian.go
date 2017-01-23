@@ -16,13 +16,10 @@ func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, e
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	out := &Image{img: image.NewRGBA(img.img.Bounds())}
-
 	kernel := gaussianKernel(kernelSize, sigma)
-
+	kernelOffset := (kernelSize - 1) / 2
 	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 		var gr, gb, gg float64
-		kernelOffset := (kernelSize - 1) / 2
 		for dy := -kernelOffset; dy <= kernelOffset; dy++ {
 			for dx := -kernelOffset; dx <= kernelOffset; dx++ {
 				pOffset := offset + (dx*4 + dy*inStride)
@@ -43,13 +40,22 @@ func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, e
 		outPix[offset+3] = 255
 	}
 
-	kernelOffset := (kernelSize - 1) / 2
-	inBounds := image.Rectangle{
-		Min: image.Point{X: kernelOffset, Y: kernelOffset},
-		Max: image.Point{X: img.Bounds().Dx() - 2*kernelOffset, Y: img.Bounds().Dy() - 2*kernelOffset},
+	out := &Image{
+		img: image.NewRGBA(image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},
+			Max: image.Point{X: img.Width, Y: img.Height},
+		}),
+		Width:  img.Width,
+		Height: img.Height,
+		Bounds: Rect{
+			X:      img.Bounds.X + kernelOffset,
+			Y:      img.Bounds.Y + kernelOffset,
+			Width:  img.Bounds.Width - 2*kernelOffset,
+			Height: img.Bounds.Height - 2*kernelOffset,
+		},
 	}
 
-	runParallel(numRoutines, img, inBounds, out, pf, -1)
+	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
 }
 
