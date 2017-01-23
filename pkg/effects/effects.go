@@ -57,23 +57,56 @@ type Image struct {
 	Height int
 }
 
+// SaveOpts specifies some save parameters that can be specified when saving
+// an image
+type SaveOpts struct {
+	// JPEGCompression a value between 1 and 100, if 0 specified, defaults to 90.
+	// Higher values are better quality. Only applicable if the file ends with a
+	// .jpg or .jpeg extension
+	JPEGCompression int
+
+	// ClipToBounds if true only the image inside the region specified by the bounds is
+	// saved. Sometimes aftere running an image effect you may have outer bands that are
+	// dead pixels, setting this to true crops them out.
+	ClipToBounds bool
+}
+
 // Save saves the image as the file type defined by the extension in the path e.g. ,jpg or .png
-func (i *Image) Save(outPath string) error {
+func (i *Image) Save(outPath string, opts SaveOpts) error {
 	ext := strings.ToLower(path.Ext(outPath))
+
+	final := i
+	if opts.ClipToBounds {
+		final = &Image{
+			img: image.NewRGBA(image.Rectangle{
+				Min: image.Point{X: 0, Y: 0},
+				Max: image.Point{X: i.Bounds.Width, Y: i.Bounds.Height},
+			}),
+			Width:  i.Bounds.Width,
+			Height: i.Bounds.Height,
+			Bounds: Rect{X: 0, Y: 0, Width: i.Bounds.Width, Height: i.Bounds.Height},
+		}
+
+		draw.Draw(final.img, final.Bounds.ToImageRect(), i.img, i.Bounds.ToImageRect().Min, draw.Src)
+	}
 
 	switch path.Ext(outPath) {
 	case ".jpg", ".jpeg":
-		return i.SaveAsJPG(outPath, 90)
+		cmpLvl := opts.JPEGCompression
+		if cmpLvl == 0 {
+			cmpLvl = 90
+		}
+		return final.saveAsJPG(outPath, cmpLvl)
 	case ".png":
-		return i.SaveAsPNG(outPath)
+		return final.saveAsPNG(outPath)
 	default:
 		return fmt.Errorf("unsupported file type: %s", ext)
 	}
 	return nil
 }
 
-// SaveAsJPG saves the image as a JPG. quality is between 1 and 100, 100 being best
-func (i *Image) SaveAsJPG(path string, quality int) error {
+// saveAsJPG saves the image as a JPG. quality is between 1 and 100, 100 being best
+func (i *Image) saveAsJPG(path string, quality int) error {
 	toImg, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create image: %s, %s", path, err)
@@ -86,8 +119,8 @@ func (i *Image) SaveAsJPG(path string, quality int) error {
 	return nil
 }
 
-// SaveAsPNG saves the image as a PNG
-func (i *Image) SaveAsPNG(path string) error {
+// saveAsPNG saves the image as a PNG
+func (i *Image) saveAsPNG(path string) error {
 	toImg, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create image: %s, %s", path, err)

@@ -171,7 +171,7 @@ func main() {
 		}
 	}
 
-	err = outImg.Save(outPath)
+	err = outImg.Save(outPath, effects.SaveOpts{ClipToBounds: true})
 	if err != nil {
 		fmt.Println("Failed to save modified image:", err)
 		os.Exit(1)

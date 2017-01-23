@@ -55,7 +55,7 @@ func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 		}
 
 		if opts.DebugPath != "" {
-			err = inImg.Save(path.Join(opts.DebugPath, "cartoon-gaussian.jpg"))
+			err = inImg.Save(path.Join(opts.DebugPath, "cartoon-gaussian.jpg"), SaveOpts{})
 			if err != nil {
 				return nil, err
 			}
@@ -72,7 +72,7 @@ func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 		return nil, err
 	}
 	if opts.DebugPath != "" {
-		err = edgeImg.Save(path.Join(opts.DebugPath, "cartoon-edge.jpg"))
+		err = edgeImg.Save(path.Join(opts.DebugPath, "cartoon-edge.jpg"), SaveOpts{})
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 		return nil, err
 	}
 	if opts.DebugPath != "" {
-		err = oilImg.Save(path.Join(opts.DebugPath, "cartoon-oil.jpg"))
+		err = oilImg.Save(path.Join(opts.DebugPath, "cartoon-oil.jpg"), SaveOpts{})
 		if err != nil {
 			return nil, err
 		}

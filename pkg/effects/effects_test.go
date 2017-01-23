@@ -25,10 +25,10 @@ func TestOilPainting(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, oilImg)
 
-	err = oilImg.SaveAsJPG("../../test/cabin-oil.jpg", 90)
+	err = oilImg.Save("../../test/cabin-oil.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
-	err = oilImg.SaveAsPNG("../../test/cabin-oil.png")
+	err = oilImg.Save("../../test/cabin-oil.png", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	timing.Time("oil-parallel")
@@ -37,7 +37,7 @@ func TestOilPainting(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, oilImg)
 
-	err = oilImg.Save("../../test/cabin-parallel-oil.jpg")
+	err = oilImg.Save("../../test/cabin-parallel-oil.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
@@ -58,7 +58,7 @@ func TestGrayscale(t *testing.T) {
 	timing.TimeEnd("grayscale-average")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
-	err = grayImg.Save("../../test/cabin-gray-average.jpg")
+	err = grayImg.Save("../../test/cabin-gray-average.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	timing.Time("grayscale-lightness")
@@ -66,7 +66,7 @@ func TestGrayscale(t *testing.T) {
 	timing.TimeEnd("grayscale-lightness")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
-	err = grayImg.Save("../../test/cabin-gray-lightness.jpg")
+	err = grayImg.Save("../../test/cabin-gray-lightness.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	timing.Time("grayscale-luminosity")
@@ -74,7 +74,7 @@ func TestGrayscale(t *testing.T) {
 	timing.TimeEnd("grayscale-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
-	err = grayImg.Save("../../test/cabin-gray-luminosity.jpg")
+	err = grayImg.Save("../../test/cabin-gray-luminosity.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	timing.Time("grayscale-parallel-luminosity")
@@ -82,7 +82,7 @@ func TestGrayscale(t *testing.T) {
 	timing.TimeEnd("grayscale-parallel-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
-	err = grayImg.Save("../../test/cabin-gray-parallel-luminosity.jpg")
+	err = grayImg.Save("../../test/cabin-gray-parallel-luminosity.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
@@ -111,7 +111,7 @@ func TestSobel(t *testing.T) {
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel")
 
-	err = sobelImg.Save("../../test/turtle-sobel.jpg")
+	err = sobelImg.Save("../../test/turtle-sobel.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	// The sobel image contains pixels of value either 255 or 0, 255 if the sobel gradient is
@@ -122,7 +122,7 @@ func TestSobel(t *testing.T) {
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel-threshold-200")
 
-	err = sobelImg.Save("../../test/turtle-sobel-threshold-200.jpg")
+	err = sobelImg.Save("../../test/turtle-sobel-threshold-200.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
@@ -143,7 +143,7 @@ func TestGaussian(t *testing.T) {
 	timing.TimeEnd("gaussian")
 	require.Nil(t, err)
 	require.NotNil(t, gaussianImg)
-	err = gaussianImg.Save("../../test/face-gaussian.jpg")
+	err = gaussianImg.Save("../../test/face-gaussian.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
@@ -172,7 +172,7 @@ func TestCartoon(t *testing.T) {
 	require.NotNil(t, cartoonImg)
 	timing.TimeEnd("cartoon")
 
-	err = cartoonImg.Save("../../test/turtle-cartoon.jpg")
+	err = cartoonImg.Save("../../test/turtle-cartoon.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
@@ -194,7 +194,7 @@ func TestPixelate(t *testing.T) {
 	require.NotNil(t, pixelImg)
 	timing.TimeEnd("pixelate")
 
-	err = pixelImg.Save("../../test/turtle-20-pixelate.jpg")
+	err = pixelImg.Save("../../test/turtle-20-pixelate.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)
