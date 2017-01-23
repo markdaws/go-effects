@@ -1,5 +1,5 @@
 # go-effects
-Parallelized image manipulation effects, written in Go.
+Parallelized image manipulation effects, written in Go. All sample images used in this project are from: https://unsplash.com
 
 ## Overview
 This library provides basic image effects, running on multiple goroutines to parallelize the processing. You can include the library directly in your code via gihutb.com/markdaws/go-effect/pkg/effects or there is a command line app that you can use to process photos in cmd/goeffects, to run:
