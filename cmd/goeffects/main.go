@@ -146,7 +146,7 @@ func main() {
 			fmt.Println("Invalid oilLevels value")
 			os.Exit(1)
 		}
-		opts := effects.CTOptions{
+		opts := effects.CTOpts{
 			BlurKernelSize: blurStrength,
 			EdgeThreshold:  edgeThreshold,
 			OilFilterSize:  oilFilterSize,

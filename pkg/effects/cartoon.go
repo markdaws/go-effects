@@ -6,8 +6,8 @@ import (
 	"runtime"
 )
 
-// CTOptions options to pass to the Cartoon effect
-type CTOptions struct {
+// CTOpts options to pass to the Cartoon effect
+type CTOpts struct {
 	// BlurKernelSize is the gaussian blur kernel size. You might need to blur
 	// the original input image to reduce the amount of noise you get in the edge
 	// detection phase. Set to 0 to skip blur, otherwise the number must be an
@@ -41,7 +41,7 @@ type CTOptions struct {
 // EdgeThreshold: 40
 // OilFilterSize: 15
 // OilLevels: 15
-func Cartoon(img *Image, numRoutines int, opts CTOptions) (*Image, error) {
+func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
