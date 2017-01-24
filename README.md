@@ -46,6 +46,15 @@ Renders the input image as a pixelated image, based on the blockSize specified b
 ![](examples/mountain-pixelate-10.png)
 
 
+##Pencil
+Given an input image returns an image rendered as if it was drawn by pencil. This is just an inverted sobel image, you can specify a blur factor to reduce noise
+
+###Original Image
+![](examples/houses.jpg)
+###Modified Image (Pencil, blurFactor: 5)
+![](examples/houses-pencil.jpg)
+
+
 ##Sobel
 Given an input image returns an image containing edge gradients values, based on the Sobel operator.  By default the pixel r,g,b values all contain the gradient intensity, but if you supply a threshold value to the function, then if the gradient intensity is >= threshold the pixel value will be 255 and if it is less than it will be 0.  This way you can set some threshold and use this for edge detection.
 
