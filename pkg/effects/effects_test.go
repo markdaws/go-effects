@@ -106,7 +106,7 @@ func TestSobel(t *testing.T) {
 
 	// The sobel image contains all of the intensity values, since we pass -1
 	timing.Time("sobel")
-	sobelImg, err := effects.Sobel(img, 0, -1)
+	sobelImg, err := effects.Sobel(img, 0, -1, false)
 	require.Nil(t, err)
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel")
@@ -117,12 +117,41 @@ func TestSobel(t *testing.T) {
 	// The sobel image contains pixels of value either 255 or 0, 255 if the sobel gradient is
 	// >= threshold, 0 otherwise
 	timing.Time("sobel-threshold-200")
-	sobelImg, err = effects.Sobel(img, 0, 200)
+	sobelImg, err = effects.Sobel(img, 0, 200, false)
 	require.Nil(t, err)
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel-threshold-200")
 
 	err = sobelImg.Save("../../test/turtle-sobel-threshold-200.jpg", effects.SaveOpts{ClipToBounds: true})
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds)
+	fmt.Println(timing)
+}
+
+func TestPencil(t *testing.T) {
+	timing := effects.NewTiming()
+
+	timing.Time("load")
+	img, err := effects.LoadImage("../../test/houses.jpg")
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("grayscale-luminosity")
+	grayImg, err := effects.Grayscale(img, 1, effects.GSLUMINOSITY)
+	timing.TimeEnd("grayscale-luminosity")
+	require.Nil(t, err)
+	require.NotNil(t, grayImg)
+
+	// Pencil is just the sobel inverted with no thresholding
+	timing.Time("pencil")
+	pencilImg, err := effects.Pencil(img, 0, 5)
+	require.Nil(t, err)
+	require.NotNil(t, pencilImg)
+	timing.TimeEnd("pencil")
+
+	err = pencilImg.Save("../../test/houses-pencil.jpg", effects.SaveOpts{ClipToBounds: true})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)

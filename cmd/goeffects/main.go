@@ -28,6 +28,13 @@ func main() {
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
+	case "pencil":
+		if len(flag.Args()) != 3 {
+			fmt.Println("The pencil effect requires 3 args, input path, output path blurFactor\n")
+			fmt.Println("Sample usage: goeffects -effect=pencil mypic.jpg mypic-pencil.jpg\n")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
 	case "gaussian":
 		if len(flag.Args()) != 4 {
 			fmt.Println("The gaussian effect requires 4 args, input path, output path, kernelSize, sigma\n")
@@ -104,8 +111,20 @@ func main() {
 			fmt.Println("Failed to apply effect:", err)
 			os.Exit(1)
 		}
+	case "pencil":
+		blurFactor, err := strconv.Atoi(flag.Arg(2))
+		if err != nil {
+			fmt.Println("Invalid blurFactor value:", err)
+			os.Exit(1)
+		}
+
+		outImg, err = effects.Pencil(img, 0, blurFactor)
+		if err != nil {
+			fmt.Println("Failed to apply effect:", err)
+			os.Exit(1)
+		}
 	case "oil":
-		filterSize, err := strconv.Atoi(flag.Arg(0))
+		filterSize, err := strconv.Atoi(flag.Arg(2))
 		if err != nil {
 			fmt.Println("Invalid filterSize value:", err)
 			os.Exit(1)
@@ -115,7 +134,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		levels, err := strconv.Atoi(flag.Arg(1))
+		levels, err := strconv.Atoi(flag.Arg(3))
 		if err != nil {
 			fmt.Println("Invalid levels value:", err)
 			os.Exit(1)
