@@ -7,6 +7,7 @@ import (
 	"runtime"
 )
 
+// Gaussian applies a gaussian blur to the image
 func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, error) {
 	if !isOddInt(kernelSize) {
 		return nil, fmt.Errorf("kernel size must be odd")

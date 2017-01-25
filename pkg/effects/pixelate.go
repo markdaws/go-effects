@@ -6,6 +6,7 @@ import (
 	"runtime"
 )
 
+// Pixelate pixelates the imput image
 func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
