@@ -18,8 +18,7 @@ Take a look at pkg/effects/effects_test.go for examples of how to use this libra
 github.com/markdaws/go-effects/pkg/effects
 
 ##Docs
-See [godoc](https://godoc.org/github.com/markdaws/go-effects/pkg/effects)
-
+[![GoDoc](https://godoc.org/github.com/markdaws/go-effects/pkg/effects?status.svg)](https://godoc.org/github.com/markdaws/go-effects/pkg/effects)
 
 ##Oil Painting
 This effect takes an input image and renders it styled as an oil painting. The boldness of the stroke and the range of the palette can be modified.
