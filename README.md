@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/markdaws/go-effects)](https://goreportcard.com/report/github.com/markdaws/go-effects)
+
 # go-effects
 Parallelized image manipulation effects, written in Go. All sample images used in this project are from: https://unsplash.com
 
