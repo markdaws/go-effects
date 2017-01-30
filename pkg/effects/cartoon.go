@@ -33,57 +33,58 @@ type CTOpts struct {
 	DebugPath string
 }
 
-// Cartoon renders the image stylized as a cartoon. It works by rendering the input image
-// using the OilPainting effect, then drawing lines ontop of hte image based on the Sobel
-// edge detection method. You will probably have to play with the opts values to get a good
-// result. Some starting values are:
-// BlurKernelSize: 21
-// EdgeThreshold: 40
-// OilFilterSize: 15
-// OilLevels: 15
-func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
+type cartoon struct {
+	opts CTOpts
+}
+
+// Apply runs the image through the cartoon filter
+func (c *cartoon) Apply(img *Image, numRoutines int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
 	inImg := img
-	if opts.BlurKernelSize > 0 {
+	if c.opts.BlurKernelSize > 0 {
 		var err error
-		inImg, err = Gaussian(img, numRoutines, opts.BlurKernelSize, 1)
+		gaussian := NewGaussian(c.opts.BlurKernelSize, 1)
+		inImg, err = gaussian.Apply(img, numRoutines)
 		if err != nil {
 			return nil, err
 		}
 
-		if opts.DebugPath != "" {
-			err = inImg.Save(path.Join(opts.DebugPath, "cartoon-gaussian.jpg"), SaveOpts{})
+		if c.opts.DebugPath != "" {
+			err = inImg.Save(path.Join(c.opts.DebugPath, "cartoon-gaussian.jpg"), SaveOpts{})
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	grayImg, err := Grayscale(inImg, numRoutines, GSLUMINOSITY)
+	gs := NewGrayscale(GSLUMINOSITY)
+	grayImg, err := gs.Apply(inImg, numRoutines)
 	if err != nil {
 		return nil, err
 	}
 
-	edgeImg, err := Sobel(grayImg, numRoutines, opts.EdgeThreshold, false)
+	sobel := NewSobel(c.opts.EdgeThreshold, false)
+	edgeImg, err := sobel.Apply(grayImg, numRoutines)
 	if err != nil {
 		return nil, err
 	}
-	if opts.DebugPath != "" {
-		err = edgeImg.Save(path.Join(opts.DebugPath, "cartoon-edge.jpg"), SaveOpts{})
+	if c.opts.DebugPath != "" {
+		err = edgeImg.Save(path.Join(c.opts.DebugPath, "cartoon-edge.jpg"), SaveOpts{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	oilImg, err := OilPainting(img, numRoutines, opts.OilFilterSize, opts.OilLevels)
+	oil := NewOilPainting(c.opts.OilFilterSize, c.opts.OilLevels)
+	oilImg, err := oil.Apply(img, numRoutines)
 	if err != nil {
 		return nil, err
 	}
-	if opts.DebugPath != "" {
-		err = oilImg.Save(path.Join(opts.DebugPath, "cartoon-oil.jpg"), SaveOpts{})
+	if c.opts.DebugPath != "" {
+		err = oilImg.Save(path.Join(c.opts.DebugPath, "cartoon-oil.jpg"), SaveOpts{})
 		if err != nil {
 			return nil, err
 		}
@@ -124,4 +125,18 @@ func Cartoon(img *Image, numRoutines int, opts CTOpts) (*Image, error) {
 	}
 	runParallel(numRoutines, oilImg, out.Bounds, out, pf, 0)
 	return out, nil
+}
+
+// NewCartoon returns an effect that renders images as if they are drawn like a cartoon.
+// It works by rendering the input image using the OilPainting effect, then drawing lines
+// ontop of the image based on the Sobel edge detection method. You will probably have to
+// play with the opts values to get a good result. Some starting values are:
+// BlurKernelSize: 21
+// EdgeThreshold: 40
+// OilFilterSize: 15
+// OilLevels: 15
+func NewCartoon(opts CTOpts) Effect {
+	return &cartoon{
+		opts: opts,
+	}
 }

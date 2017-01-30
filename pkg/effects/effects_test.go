@@ -20,7 +20,8 @@ func TestOilPainting(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("oil-serial")
-	oilImg, err := effects.OilPainting(img, 1, 5, 30)
+	oil := effects.NewOilPainting(5, 30)
+	oilImg, err := oil.Apply(img, 1)
 	timing.TimeEnd("oil-serial")
 	require.Nil(t, err)
 	require.NotNil(t, oilImg)
@@ -32,7 +33,7 @@ func TestOilPainting(t *testing.T) {
 	require.Nil(t, err)
 
 	timing.Time("oil-parallel")
-	oilImg, err = effects.OilPainting(img, 0, 5, 30)
+	oilImg, err = oil.Apply(img, 0)
 	timing.TimeEnd("oil-parallel")
 	require.Nil(t, err)
 	require.NotNil(t, oilImg)
@@ -54,7 +55,8 @@ func TestGrayscale(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("grayscale-average")
-	grayImg, err := effects.Grayscale(img, 1, effects.GSAVERAGE)
+	gsAverage := effects.NewGrayscale(effects.GSAVERAGE)
+	grayImg, err := gsAverage.Apply(img, 1)
 	timing.TimeEnd("grayscale-average")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
@@ -62,7 +64,8 @@ func TestGrayscale(t *testing.T) {
 	require.Nil(t, err)
 
 	timing.Time("grayscale-lightness")
-	grayImg, err = effects.Grayscale(img, 1, effects.GSLIGHTNESS)
+	gsLightness := effects.NewGrayscale(effects.GSLIGHTNESS)
+	grayImg, err = gsLightness.Apply(img, 1)
 	timing.TimeEnd("grayscale-lightness")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
@@ -70,7 +73,8 @@ func TestGrayscale(t *testing.T) {
 	require.Nil(t, err)
 
 	timing.Time("grayscale-luminosity")
-	grayImg, err = effects.Grayscale(img, 1, effects.GSLUMINOSITY)
+	gsLuminosity := effects.NewGrayscale(effects.GSLUMINOSITY)
+	grayImg, err = gsLuminosity.Apply(img, 1)
 	timing.TimeEnd("grayscale-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
@@ -78,7 +82,7 @@ func TestGrayscale(t *testing.T) {
 	require.Nil(t, err)
 
 	timing.Time("grayscale-parallel-luminosity")
-	grayImg, err = effects.Grayscale(img, 0, effects.GSLUMINOSITY)
+	grayImg, err = gsLuminosity.Apply(img, 0)
 	timing.TimeEnd("grayscale-parallel-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
@@ -99,14 +103,16 @@ func TestSobel(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("grayscale-luminosity")
-	grayImg, err := effects.Grayscale(img, 1, effects.GSLUMINOSITY)
+	grayscale := effects.NewGrayscale(effects.GSLUMINOSITY)
+	grayImg, err := grayscale.Apply(img, 1)
 	timing.TimeEnd("grayscale-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
 
 	// The sobel image contains all of the intensity values, since we pass -1
 	timing.Time("sobel")
-	sobelImg, err := effects.Sobel(img, 0, -1, false)
+	sobel := effects.NewSobel(-1, false)
+	sobelImg, err := sobel.Apply(img, 0)
 	require.Nil(t, err)
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel")
@@ -117,7 +123,8 @@ func TestSobel(t *testing.T) {
 	// The sobel image contains pixels of value either 255 or 0, 255 if the sobel gradient is
 	// >= threshold, 0 otherwise
 	timing.Time("sobel-threshold-200")
-	sobelImg, err = effects.Sobel(img, 0, 200, false)
+	sobel = effects.NewSobel(200, false)
+	sobelImg, err = sobel.Apply(img, 0)
 	require.Nil(t, err)
 	require.NotNil(t, sobelImg)
 	timing.TimeEnd("sobel-threshold-200")
@@ -139,14 +146,16 @@ func TestPencil(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("grayscale-luminosity")
-	grayImg, err := effects.Grayscale(img, 1, effects.GSLUMINOSITY)
+	gs := effects.NewGrayscale(effects.GSLUMINOSITY)
+	grayImg, err := gs.Apply(img, 1)
 	timing.TimeEnd("grayscale-luminosity")
 	require.Nil(t, err)
 	require.NotNil(t, grayImg)
 
 	// Pencil is just the sobel inverted with no thresholding
 	timing.Time("pencil")
-	pencilImg, err := effects.Pencil(img, 0, 5)
+	pencil := effects.NewPencil(5)
+	pencilImg, err := pencil.Apply(img, 0)
 	require.Nil(t, err)
 	require.NotNil(t, pencilImg)
 	timing.TimeEnd("pencil")
@@ -168,7 +177,8 @@ func TestGaussian(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("gaussian")
-	gaussianImg, err := effects.Gaussian(img, 0, 21, 1)
+	effect := effects.NewGaussian(21, 1)
+	gaussianImg, err := effect.Apply(img, 0)
 	timing.TimeEnd("gaussian")
 	require.Nil(t, err)
 	require.NotNil(t, gaussianImg)
@@ -196,7 +206,8 @@ func TestCartoon(t *testing.T) {
 		OilLevels:      12,
 		DebugPath:      "../../test",
 	}
-	cartoonImg, err := effects.Cartoon(img, 0, opts)
+	effect := effects.NewCartoon(opts)
+	cartoonImg, err := effect.Apply(img, 0)
 	require.Nil(t, err)
 	require.NotNil(t, cartoonImg)
 	timing.TimeEnd("cartoon")
@@ -218,7 +229,8 @@ func TestPixelate(t *testing.T) {
 	require.NotNil(t, img)
 
 	timing.Time("pixelate")
-	pixelImg, err := effects.Pixelate(img, 0, 20)
+	pixelate := effects.NewPixelate(20)
+	pixelImg, err := pixelate.Apply(img, 0)
 	require.Nil(t, err)
 	require.NotNil(t, pixelImg)
 	timing.TimeEnd("pixelate")

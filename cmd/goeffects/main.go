@@ -44,7 +44,8 @@ func runGaussian(img *effects.Image) *effects.Image {
 		fmt.Println("invalid sigma value")
 		os.Exit(1)
 	}
-	outImg, err := effects.Gaussian(img, 0, kernelSize, sigma)
+	gaussian := effects.NewGaussian(kernelSize, sigma)
+	outImg, err := gaussian.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)
@@ -63,7 +64,8 @@ func runSobel(img *effects.Image) *effects.Image {
 		fmt.Println("invalid invert value")
 		os.Exit(1)
 	}
-	outImg, err := effects.Sobel(img, 0, threshold, invert)
+	sobel := effects.NewSobel(threshold, invert)
+	outImg, err := sobel.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)
@@ -78,7 +80,8 @@ func runPencil(img *effects.Image) *effects.Image {
 		os.Exit(1)
 	}
 
-	outImg, err := effects.Pencil(img, 0, blurFactor)
+	pencil := effects.NewPencil(blurFactor)
+	outImg, err := pencil.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)
@@ -105,7 +108,9 @@ func runOil(img *effects.Image) *effects.Image {
 		fmt.Println("Levels must be at least 1")
 		os.Exit(1)
 	}
-	outImg, err := effects.OilPainting(img, 0, filterSize, levels)
+
+	oil := effects.NewOilPainting(filterSize, levels)
+	outImg, err := oil.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)
@@ -141,7 +146,8 @@ func runCartoon(img *effects.Image) *effects.Image {
 		OilLevels:      oilLevels,
 		DebugPath:      "",
 	}
-	outImg, err := effects.Cartoon(img, 0, opts)
+	cartoon := effects.NewCartoon(opts)
+	outImg, err := cartoon.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)
@@ -155,7 +161,8 @@ func runPixelate(img *effects.Image) *effects.Image {
 		fmt.Println("Invalid blockSize value")
 		os.Exit(1)
 	}
-	outImg, err := effects.Pixelate(img, 0, blockSize)
+	pixelate := effects.NewPixelate(blockSize)
+	outImg, err := pixelate.Apply(img, 0)
 	if err != nil {
 		fmt.Println("Failed to apply effect:", err)
 		os.Exit(1)

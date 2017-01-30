@@ -34,7 +34,7 @@ func (t *Timing) TimeEnd(label string) int {
 		return -1
 	}
 
-	elapsed := int(time.Now().Sub(start).Nanoseconds() / 1000000)
+	elapsed := int(time.Since(start).Nanoseconds() / 1000000)
 	t.Labels[label] = elapsed
 	delete(t.runningLabels, label)
 	return elapsed

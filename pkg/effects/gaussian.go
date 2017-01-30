@@ -7,9 +7,21 @@ import (
 	"runtime"
 )
 
-// Gaussian applies a gaussian blur to the image
-func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, error) {
-	if !isOddInt(kernelSize) {
+type gaussian struct {
+	kernelSize int
+	sigma      float64
+}
+
+// NewGaussian is an effect that applies a gaussian blur to the image
+func NewGaussian(kernelSize int, sigma float64) Effect {
+	return &gaussian{
+		kernelSize: kernelSize,
+		sigma:      sigma,
+	}
+}
+
+func (g *gaussian) Apply(img *Image, numRoutines int) (*Image, error) {
+	if !isOddInt(g.kernelSize) {
 		return nil, fmt.Errorf("kernel size must be odd")
 	}
 
@@ -17,8 +29,8 @@ func Gaussian(img *Image, numRoutines, kernelSize int, sigma float64) (*Image, e
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	kernel := gaussianKernel(kernelSize, sigma)
-	kernelOffset := (kernelSize - 1) / 2
+	kernel := gaussianKernel(g.kernelSize, g.sigma)
+	kernelOffset := (g.kernelSize - 1) / 2
 	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 		var gr, gb, gg float64
 		for dy := -kernelOffset; dy <= kernelOffset; dy++ {

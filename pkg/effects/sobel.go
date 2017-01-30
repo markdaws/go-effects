@@ -6,12 +6,24 @@ import (
 	"runtime"
 )
 
-// Sobel the input image should be a grayscale image, the output will be a version of
+type sobel struct {
+	threshold int
+	invert    bool
+}
+
+// NewSobel the input image should be a grayscale image, the output will be a version of
 // the input image with the Sobel edge detector applied to it. A value of -1 for threshold
 // will return an image whos rgb values are the sobel intensity values, if 0 <= threshold <= 255
 // then the rgb values will be 255 if the intensity is >= threshold and 0 if the intensity
 // is < threshold
-func Sobel(img *Image, numRoutines, threshold int, invert bool) (*Image, error) {
+func NewSobel(threshold int, invert bool) Effect {
+	return &sobel{
+		threshold: threshold,
+		invert:    invert,
+	}
+}
+
+func (s *sobel) Apply(img *Image, numRoutines int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
@@ -39,15 +51,15 @@ func Sobel(img *Image, numRoutines, threshold int, invert bool) (*Image, error) 
 		}
 
 		val := uint8(math.Sqrt(float64(px*px + py*py)))
-		if threshold != -1 {
-			if val >= uint8(threshold) {
+		if s.threshold != -1 {
+			if val >= uint8(s.threshold) {
 				val = 255
 			} else {
 				val = 0
 			}
 		}
 
-		if invert {
+		if s.invert {
 			val = 255 - val
 		}
 		outPix[offset] = val

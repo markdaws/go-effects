@@ -20,17 +20,18 @@ const (
 	GSLUMINOSITY
 )
 
-// Grayscale renders the input image as a grayscale image. numRoutines specifies how many
-// goroutines should be used to process the image in parallel, use 0 to let the library decide
-func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
+type grayscale struct {
+	algo GSAlgo
+}
 
+func (gs *grayscale) Apply(img *Image, numRoutines int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
 	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 		var r, g, b uint8 = inPix[offset], inPix[offset+1], inPix[offset+2]
-		switch algo {
+		switch gs.algo {
 		case GSLIGHTNESS:
 			max := math.Max(math.Max(float64(r), float64(g)), float64(b))
 			min := math.Max(math.Min(float64(r), float64(g)), float64(b))
@@ -69,4 +70,10 @@ func Grayscale(img *Image, numRoutines int, algo GSAlgo) (*Image, error) {
 
 	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
+}
+
+// NewGrayscale renders the input image as a grayscale image. numRoutines specifies how many
+// goroutines should be used to process the image in parallel, use 0 to let the library decide
+func NewGrayscale(algo GSAlgo) Effect {
+	return &grayscale{algo: algo}
 }

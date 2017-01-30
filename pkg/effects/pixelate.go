@@ -6,39 +6,42 @@ import (
 	"runtime"
 )
 
-// Pixelate pixelates the imput image
-func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
+type pixelate struct {
+	blockSize int
+}
+
+func (p *pixelate) Apply(img *Image, numRoutines int) (*Image, error) {
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	if img.Bounds.Width%blockSize != 0 ||
-		img.Bounds.Height%blockSize != 0 {
+	if img.Bounds.Width%p.blockSize != 0 ||
+		img.Bounds.Height%p.blockSize != 0 {
 		return nil, fmt.Errorf("blockSize must divide exactly into the width and the height of the input image")
 	}
 
-	nBlocksX := img.Bounds.Width / blockSize
-	nBlocksY := img.Bounds.Height / blockSize
+	nBlocksX := img.Bounds.Width / p.blockSize
+	nBlocksY := img.Bounds.Height / p.blockSize
 	nBlocks := nBlocksX * nBlocksY
 
 	blocksR := make([]int, nBlocks)
 	blocksG := make([]int, nBlocks)
 	blocksB := make([]int, nBlocks)
-	pixelsPerBlock := blockSize * blockSize
+	pixelsPerBlock := p.blockSize * p.blockSize
 
 	pfCalc := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 		r := inPix[offset]
 		g := inPix[offset+1]
 		b := inPix[offset+2]
 
-		blockIndex := (y/blockSize)*nBlocksX + (x / blockSize)
+		blockIndex := (y/p.blockSize)*nBlocksX + (x / p.blockSize)
 		blocksR[blockIndex] += int(r)
 		blocksG[blockIndex] += int(g)
 		blocksB[blockIndex] += int(b)
 	}
 
 	pfSet := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
-		blockIndex := (y/blockSize)*nBlocksX + (x / blockSize)
+		blockIndex := (y/p.blockSize)*nBlocksX + (x / p.blockSize)
 
 		outPix[offset] = uint8(blocksR[blockIndex])
 		outPix[offset+1] = uint8(blocksG[blockIndex])
@@ -64,7 +67,7 @@ func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 	}
 
 	// Make sure the goroutines process on a block boundary
-	pixelsPerRoutine = ((img.Bounds.Width / numRoutines) / blockSize) * blockSize
+	pixelsPerRoutine = ((img.Bounds.Width / numRoutines) / p.blockSize) * p.blockSize
 	runParallel(numRoutines, img, out.Bounds, out, pfCalc, pixelsPerRoutine)
 
 	// Divide by number of pixels
@@ -76,4 +79,9 @@ func Pixelate(img *Image, numRoutines, blockSize int) (*Image, error) {
 
 	runParallel(numRoutines, img, out.Bounds, out, pfSet, pixelsPerRoutine)
 	return out, nil
+}
+
+// NewPixelate pixelates the imput image
+func NewPixelate(blockSize int) Effect {
+	return &pixelate{blockSize: blockSize}
 }

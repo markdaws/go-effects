@@ -5,13 +5,14 @@ import (
 	"runtime"
 )
 
-// OilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
-// goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
-// how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
-// will be grouped in to, start with values 5,30 to see how that works.
-func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error) {
-	levels = levels - 1
-	filterOffset := (filterSize - 1) / 2
+type oilPainting struct {
+	filterSize int
+	levels     int
+}
+
+func (op *oilPainting) Apply(img *Image, numRoutines int) (*Image, error) {
+	levels := op.levels - 1
+	filterOffset := (op.filterSize - 1) / 2
 
 	if numRoutines == 0 {
 		numRoutines = runtime.GOMAXPROCS(0)
@@ -79,4 +80,12 @@ func OilPainting(img *Image, numRoutines, filterSize, levels int) (*Image, error
 	}
 	runParallel(numRoutines, img, out.Bounds, out, pf, 0)
 	return out, nil
+}
+
+// NewOilPainting renders the input image as if it was painted like an oil painting. numRoutines specifies how many
+// goroutines should be used to process the image in parallel, use 0 to let the library decide. filterSize specifies
+// how bold the image should look, larger numbers equate to larger strokes, levels specifies how many buckets colors
+// will be grouped in to, start with values 5,30 to see how that works.
+func NewOilPainting(filterSize, levels int) Effect {
+	return &oilPainting{filterSize: filterSize, levels: levels}
 }
