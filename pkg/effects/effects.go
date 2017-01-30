@@ -1,6 +1,9 @@
 package effects
 
-import "sync"
+import (
+	"math"
+	"sync"
+)
 
 // Effect interface for any effect type
 type Effect interface {
@@ -58,6 +61,10 @@ func roundToInt32(a float64) int32 {
 		return int32(a - 0.5)
 	}
 	return int32(a + 0.5)
+}
+
+func rangeInt(i, min, max int) int {
+	return int(math.Min(math.Max(float64(i), float64(min)), float64(max)))
 }
 
 func isOddInt(i int) bool {

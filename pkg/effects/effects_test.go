@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/markdaws/go-effects/pkg/effects"
+	"github.com/markdaws/go-timing"
 	"github.com/stretchr/testify/require"
 )
 
 const cabinPath = "../../test/cabin.jpg"
 
 func TestOilPainting(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage(cabinPath)
@@ -46,7 +47,7 @@ func TestOilPainting(t *testing.T) {
 }
 
 func TestGrayscale(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage(cabinPath)
@@ -94,7 +95,7 @@ func TestGrayscale(t *testing.T) {
 }
 
 func TestSobel(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage("../../test/turtle.jpg")
@@ -137,7 +138,7 @@ func TestSobel(t *testing.T) {
 }
 
 func TestPencil(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage("../../test/houses.jpg")
@@ -168,7 +169,7 @@ func TestPencil(t *testing.T) {
 }
 
 func TestGaussian(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage("../../test/face.jpg")
@@ -190,7 +191,7 @@ func TestGaussian(t *testing.T) {
 }
 
 func TestCartoon(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage("../../test/turtle.jpg")
@@ -220,7 +221,7 @@ func TestCartoon(t *testing.T) {
 }
 
 func TestPixelate(t *testing.T) {
-	timing := effects.NewTiming()
+	timing := timing.New()
 
 	timing.Time("load")
 	img, err := effects.LoadImage("../../test/turtle.jpg")
@@ -236,6 +237,29 @@ func TestPixelate(t *testing.T) {
 	timing.TimeEnd("pixelate")
 
 	err = pixelImg.Save("../../test/turtle-20-pixelate.jpg", effects.SaveOpts{})
+	require.Nil(t, err)
+
+	fmt.Println(img.Bounds)
+	fmt.Println(timing)
+}
+
+func TestBrightness(t *testing.T) {
+	timing := timing.New()
+
+	timing.Time("load")
+	img, err := effects.LoadImage("../../test/turtle.jpg")
+	timing.TimeEnd("load")
+	require.Nil(t, err)
+	require.NotNil(t, img)
+
+	timing.Time("brightness")
+	brightness := effects.NewBrightness(200)
+	outImg, err := brightness.Apply(img, 0)
+	require.Nil(t, err)
+	require.NotNil(t, outImg)
+	timing.TimeEnd("brightness")
+
+	err = outImg.Save("../../test/turtle-brightness.jpg", effects.SaveOpts{})
 	require.Nil(t, err)
 
 	fmt.Println(img.Bounds)

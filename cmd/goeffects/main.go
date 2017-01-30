@@ -89,6 +89,22 @@ func runPencil(img *effects.Image) *effects.Image {
 	return outImg
 }
 
+func runBrightness(img *effects.Image) *effects.Image {
+	offset, err := strconv.Atoi(flag.Arg(2))
+	if err != nil {
+		fmt.Println("Invalid offset value:", err)
+		os.Exit(1)
+	}
+
+	brightness := effects.NewBrightness(offset)
+	outImg, err := brightness.Apply(img, 0)
+	if err != nil {
+		fmt.Println("Failed to apply effect:", err)
+		os.Exit(1)
+	}
+	return outImg
+}
+
 func runOil(img *effects.Image) *effects.Image {
 	filterSize, err := strconv.Atoi(flag.Arg(2))
 	if err != nil {
@@ -172,49 +188,30 @@ func runPixelate(img *effects.Image) *effects.Image {
 
 func runEffect(img *effects.Image, effect string) *effects.Image {
 	switch effect {
-	case "gaussian":
-		return runGaussian(img)
-	case "sobel":
-		return runSobel(img)
-	case "pencil":
-		return runPencil(img)
-	case "oil":
-		return runOil(img)
+	case "brightness":
+		return runBrightness(img)
 	case "cartoon":
 		return runCartoon(img)
+	case "gaussian":
+		return runGaussian(img)
+	case "oil":
+		return runOil(img)
+	case "pencil":
+		return runPencil(img)
 	case "pixelate":
 		return runPixelate(img)
+	case "sobel":
+		return runSobel(img)
 	}
 	return nil
 }
 
 func validateFlags(effect string) {
 	switch effect {
-	case "oil":
-		if len(flag.Args()) != 4 {
-			fmt.Println("The oil effect requires 4 args, input path, output path, filterSize, levels")
-			fmt.Println("Sample usage: goeffects -effect=oil mypic.jpg mypic-oil.jpg 5 30")
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-	case "sobel":
-		if len(flag.Args()) != 4 {
-			fmt.Println("The sobel effect requires 4 args, input path, output path, threshold invert")
-			fmt.Println("Sample usage: goeffects -effect=sobel mypic.jpg mypic-sobel.jpg 100 false")
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-	case "pencil":
+	case "brightness":
 		if len(flag.Args()) != 3 {
-			fmt.Println("The pencil effect requires 3 args, input path, output path blurFactor")
-			fmt.Println("Sample usage: goeffects -effect=pencil mypic.jpg mypic-pencil.jpg")
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-	case "gaussian":
-		if len(flag.Args()) != 4 {
-			fmt.Println("The gaussian effect requires 4 args, input path, output path, kernelSize, sigma")
-			fmt.Println("Sample usage: goeffects -effect=gaussian mypic.jpg mypic-gaussian.jpg 9 1")
+			fmt.Println("The brightness effect requires 3 args, input path, output path offset")
+			fmt.Println("Sample usage: goeffects -effect=brightness mypic.jpg mypic-lighten.jpg 200")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
@@ -225,10 +222,38 @@ func validateFlags(effect string) {
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
+	case "gaussian":
+		if len(flag.Args()) != 4 {
+			fmt.Println("The gaussian effect requires 4 args, input path, output path, kernelSize, sigma")
+			fmt.Println("Sample usage: goeffects -effect=gaussian mypic.jpg mypic-gaussian.jpg 9 1")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+	case "oil":
+		if len(flag.Args()) != 4 {
+			fmt.Println("The oil effect requires 4 args, input path, output path, filterSize, levels")
+			fmt.Println("Sample usage: goeffects -effect=oil mypic.jpg mypic-oil.jpg 5 30")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+	case "pencil":
+		if len(flag.Args()) != 3 {
+			fmt.Println("The pencil effect requires 3 args, input path, output path blurFactor")
+			fmt.Println("Sample usage: goeffects -effect=pencil mypic.jpg mypic-pencil.jpg")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
 	case "pixelate":
 		if len(flag.Args()) != 3 {
 			fmt.Println("The pixelate effect requires 3 args, input path, output path, block size")
 			fmt.Println("Sample usage: goeffects -effect=pixelate mypic.jpg mypic-pixelate.jpg 12")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+	case "sobel":
+		if len(flag.Args()) != 4 {
+			fmt.Println("The sobel effect requires 4 args, input path, output path, threshold invert")
+			fmt.Println("Sample usage: goeffects -effect=sobel mypic.jpg mypic-sobel.jpg 100 false")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
