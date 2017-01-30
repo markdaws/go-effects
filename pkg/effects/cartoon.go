@@ -2,7 +2,6 @@ package effects
 
 import (
 	"image"
-	"path"
 	"runtime"
 )
 
@@ -43,53 +42,16 @@ func (c *cartoon) Apply(img *Image, numRoutines int) (*Image, error) {
 		numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	inImg := img
+	pipeline := Pipeline{}
 	if c.opts.BlurKernelSize > 0 {
-		var err error
-		gaussian := NewGaussian(c.opts.BlurKernelSize, 1)
-		inImg, err = gaussian.Apply(img, numRoutines)
-		if err != nil {
-			return nil, err
-		}
-
-		if c.opts.DebugPath != "" {
-			err = inImg.Save(path.Join(c.opts.DebugPath, "cartoon-gaussian.jpg"), SaveOpts{})
-			if err != nil {
-				return nil, err
-			}
-		}
+		pipeline.Add(NewGaussian(c.opts.BlurKernelSize, 1), nil)
 	}
-
-	gs := NewGrayscale(GSLUMINOSITY)
-	grayImg, err := gs.Apply(inImg, numRoutines)
+	pipeline.Add(NewGrayscale(GSLUMINOSITY), nil)
+	pipeline.Add(NewSobel(c.opts.EdgeThreshold, false), nil)
+	edgeImg, err := pipeline.Run(img, numRoutines)
 	if err != nil {
 		return nil, err
 	}
-
-	sobel := NewSobel(c.opts.EdgeThreshold, false)
-	edgeImg, err := sobel.Apply(grayImg, numRoutines)
-	if err != nil {
-		return nil, err
-	}
-	if c.opts.DebugPath != "" {
-		err = edgeImg.Save(path.Join(c.opts.DebugPath, "cartoon-edge.jpg"), SaveOpts{})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	oil := NewOilPainting(c.opts.OilFilterSize, c.opts.OilLevels)
-	oilImg, err := oil.Apply(img, numRoutines)
-	if err != nil {
-		return nil, err
-	}
-	if c.opts.DebugPath != "" {
-		err = oilImg.Save(path.Join(c.opts.DebugPath, "cartoon-oil.jpg"), SaveOpts{})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	edgePix := edgeImg.img.Pix
 	pf := func(ri, x, y, offset, inStride int, inPix, outPix []uint8) {
 
@@ -108,6 +70,12 @@ func (c *cartoon) Apply(img *Image, numRoutines int) (*Image, error) {
 		outPix[offset+1] = g
 		outPix[offset+2] = b
 		outPix[offset+3] = 255
+	}
+
+	oil := NewOilPainting(c.opts.OilFilterSize, c.opts.OilLevels)
+	oilImg, err := oil.Apply(img, numRoutines)
+	if err != nil {
+		return nil, err
 	}
 
 	out := &Image{
