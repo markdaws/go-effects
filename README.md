@@ -26,7 +26,7 @@ This effect takes an input image and renders it styled as an oil painting. The b
 
 ### Original Image
 ![](examples/mountain.jpg)
-###Modified Image (filterSize:5, levels:30)
+### Modified Image (filterSize:5, levels:30)
 ![](examples/mountain-oil-15-30.jpg)
 
 
